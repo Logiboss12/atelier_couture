@@ -1,0 +1,42 @@
+export const clients = [
+  {
+    id: 'c1', nom: 'Aïssatou Diop', ville: 'Dakar', pays: 'Sénégal', tel: '+221 77 512 34 56',
+    email: 'aissatou.diop@example.com', commandes: 6, depuis: '2023',
+    mensurations: { poitrine: 96, taille: 74, hanches: 102, epaule: 39, manche: 58, longueur: 142 },
+  },
+  {
+    id: 'c2', nom: 'Moussa Fall', ville: 'Dakar', pays: 'Sénégal', tel: '+221 76 220 98 10',
+    email: 'moussa.fall@example.com', commandes: 3, depuis: '2024',
+    mensurations: { poitrine: 104, taille: 92, hanches: 100, epaule: 46, manche: 63, longueur: 108 },
+  },
+  {
+    id: 'c3', nom: 'Camille Dubois', ville: 'Paris', pays: 'France', tel: '+33 6 12 34 56 78',
+    email: 'camille.dubois@example.com', commandes: 4, depuis: '2022',
+    mensurations: { poitrine: 88, taille: 68, hanches: 96, epaule: 37, manche: 56, longueur: 138 },
+  },
+  {
+    id: 'c4', nom: 'Fatou Ndiaye', ville: 'Saint-Louis', pays: 'Sénégal', tel: '+221 78 340 11 22',
+    email: 'fatou.ndiaye@example.com', commandes: 8, depuis: '2021',
+    mensurations: { poitrine: 100, taille: 82, hanches: 108, epaule: 40, manche: 59, longueur: 144 },
+  },
+  {
+    id: 'c5', nom: 'Julien Moreau', ville: 'Lyon', pays: 'France', tel: '+33 6 98 76 54 32',
+    email: 'julien.moreau@example.com', commandes: 2, depuis: '2025',
+    mensurations: { poitrine: 100, taille: 88, hanches: 98, epaule: 45, manche: 62, longueur: 110 },
+  },
+  {
+    id: 'c6', nom: 'Mariama Sow', ville: 'Thiès', pays: 'Sénégal', tel: '+221 70 654 32 10',
+    email: 'mariama.sow@example.com', commandes: 5, depuis: '2023',
+    mensurations: { poitrine: 92, taille: 72, hanches: 100, epaule: 38, manche: 57, longueur: 140 },
+  },
+  {
+    id: 'c7', nom: 'Ibrahima Ba', ville: 'Dakar', pays: 'Sénégal', tel: '+221 77 888 45 90',
+    email: 'ibrahima.ba@example.com', commandes: 1, depuis: '2026',
+    mensurations: { poitrine: 108, taille: 96, hanches: 104, epaule: 47, manche: 64, longueur: 112 },
+  },
+  {
+    id: 'c8', nom: 'Léa Girard', ville: 'Paris', pays: 'France', tel: '+33 6 45 12 78 90',
+    email: 'lea.girard@example.com', commandes: 7, depuis: '2022',
+    mensurations: { poitrine: 90, taille: 70, hanches: 98, epaule: 37, manche: 56, longueur: 140 },
+  },
+]
