@@ -1,7 +1,8 @@
 import { Link } from 'react-router-dom'
 import TextileTile from '../../components/TextileTile.jsx'
 import StatusBadge from '../../components/StatusBadge.jsx'
-import { stockKpis, reorderAlerts, fabricStock, finishedStock, stockMovements } from '../../mock/stock.js'
+import { useFetch } from '../../api/useFetch.js'
+import { getStockKpis, getReorderAlerts, getFabricStocks, getFinishedStock, getStockMovements } from '../../api/stock.js'
 
 function Gauge({ niveau, badge }) {
   const color = badge === 'ok' ? 'var(--iro-green)' : badge === 'warn' ? 'var(--iro-orange)' : 'var(--iro-red)'
@@ -34,6 +35,17 @@ function StockList({ title, items }) {
 }
 
 export default function Stock() {
+  const { data: stockKpis, loading: loadingKpis } = useFetch(getStockKpis, [])
+  const { data: reorderAlerts, loading: loadingAlerts } = useFetch(getReorderAlerts, [])
+  const { data: fabricStock, loading: loadingFabric } = useFetch(getFabricStocks, [])
+  const { data: finishedStock, loading: loadingFinished } = useFetch(getFinishedStock, [])
+  const { data: stockMovements, loading: loadingMovements } = useFetch(getStockMovements, [])
+
+  if (loadingKpis || loadingAlerts || loadingFabric || loadingFinished || loadingMovements
+    || !stockKpis || !reorderAlerts || !fabricStock || !finishedStock || !stockMovements) {
+    return <p className="text-muted">Chargement…</p>
+  }
+
   return (
     <div>
       <div className="d-flex justify-content-end mb-3">

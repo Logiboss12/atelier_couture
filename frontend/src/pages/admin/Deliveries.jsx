@@ -1,7 +1,15 @@
 import StatusBadge from '../../components/StatusBadge.jsx'
-import { deliveries, todayStatusCounts } from '../../mock/deliveries.js'
+import { useFetch } from '../../api/useFetch.js'
+import { getDeliveries, getTodayStatusCounts } from '../../api/deliveries.js'
 
 export default function Deliveries() {
+  const { data: deliveries, loading: loadingDeliveries } = useFetch(getDeliveries, [])
+  const { data: todayStatusCounts, loading: loadingCounts } = useFetch(getTodayStatusCounts, [])
+
+  if (loadingDeliveries || loadingCounts || !deliveries || !todayStatusCounts) {
+    return <p className="text-muted">Chargement…</p>
+  }
+
   return (
     <div className="row g-3">
       <div className="col-12 col-lg-8">

@@ -1,7 +1,20 @@
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts'
-import { financeKpis, paymentMethods, expenseCategories, cashMovements } from '../../mock/finances.js'
+import { useFetch } from '../../api/useFetch.js'
+import { getFinanceKpis, getPaymentMethods, getExpenseCategories, getCashMovements } from '../../api/finances.js'
 
 export default function Finances() {
+  const { data: financeKpis, loading: loadingKpis } = useFetch(getFinanceKpis, [])
+  const { data: paymentMethods, loading: loadingPayment } = useFetch(getPaymentMethods, [])
+  const { data: expenseCategories, loading: loadingExpense } = useFetch(getExpenseCategories, [])
+  const { data: cashMovements, loading: loadingCash } = useFetch(getCashMovements, [])
+
+  if (loadingKpis || loadingPayment || loadingExpense || loadingCash
+    || !financeKpis || !paymentMethods || !expenseCategories || !cashMovements) {
+    return <p className="text-muted">Chargement…</p>
+  }
+
+  const totalDepenses = cashMovements.filter((m) => m.type === 'out').reduce((sum, m) => sum + m.montant, 0)
+
   return (
     <div>
       <div className="row row-cols-2 row-cols-md-4 g-3 mb-3">
@@ -47,7 +60,7 @@ export default function Finances() {
                   </PieChart>
                 </ResponsiveContainer>
                 <div className="position-absolute top-50 start-50 translate-middle text-center">
-                  <div className="font-display fs-6">4,1M F</div>
+                  <div className="font-display fs-6">{(totalDepenses / 1000000).toLocaleString('fr-FR', { maximumFractionDigits: 1 })}M F</div>
                   <div className="text-muted" style={{ fontSize: '.65rem' }}>total</div>
                 </div>
               </div>

@@ -1,19 +1,32 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import StatusBadge from '../../components/StatusBadge.jsx'
-import { promotions, events } from '../../mock/promotions.js'
-import { collections } from '../../mock/catalog.js'
+import { useFetch } from '../../api/useFetch.js'
+import { getPromotions, getEvents } from '../../api/promotions.js'
+import { getCollections } from '../../api/catalog.js'
 
 const reductions = ['-10%', '-20%', '-30%', '-40%', '-50%']
 const canaux = ['WhatsApp', 'Instagram', 'Boutique']
 
 export default function Promotions() {
+  const { data: promotions, loading: loadingPromotions } = useFetch(getPromotions, [])
+  const { data: events, loading: loadingEvents } = useFetch(getEvents, [])
+  const { data: collections, loading: loadingCollections } = useFetch(getCollections, [])
+
   const [nom, setNom] = useState('')
   const [reduction, setReduction] = useState('-20%')
-  const [cible, setCible] = useState(collections[0]?.nom)
+  const [cible, setCible] = useState(null)
   const [selectedCanaux, setSelectedCanaux] = useState(['WhatsApp'])
+
+  useEffect(() => {
+    if (!cible && collections?.length) setCible(collections[0].nom)
+  }, [collections, cible])
 
   const toggleCanal = (c) => {
     setSelectedCanaux((prev) => prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c])
+  }
+
+  if (loadingPromotions || loadingEvents || loadingCollections || !promotions || !events || !collections) {
+    return <p className="text-muted">Chargement…</p>
   }
 
   return (

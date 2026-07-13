@@ -1,18 +1,18 @@
-import { photos } from '../assets/images/index.js'
-
 export const galleryCategories = ['Tout', 'Grand boubou', 'Tailleur', 'Robe de mariée', 'Prêt-à-porter', 'Enfant']
 
+const imageBase = '/images'
+
 export const galleryItems = [
-  { id: 'g1', nom: 'Boubou Wax Impérial', categorie: 'Grand boubou', tile: 'tile-wax', image: photos.images7 },
-  { id: 'g2', nom: 'Tailleur Bazin Riche', categorie: 'Tailleur', tile: 'tile-bazin', image: photos.costume3 },
-  { id: 'g3', nom: 'Robe Dentelle Étoile', categorie: 'Robe de mariée', tile: 'tile-dentelle', image: photos.images2 },
-  { id: 'g4', nom: 'Ensemble Kente Prestige', categorie: 'Grand boubou', tile: 'tile-kente', image: photos.images10 },
-  { id: 'g5', nom: 'Costume Indigo Nuit', categorie: 'Tailleur', tile: 'tile-indigo', image: photos.costume1 },
-  { id: 'g6', nom: 'Robe Soie Duchesse', categorie: 'Prêt-à-porter', tile: 'tile-soie', image: photos.images9 },
-  { id: 'g7', nom: 'Veste Jacquard Horizon', categorie: 'Tailleur', tile: 'tile-jacquard', image: photos.images1 },
-  { id: 'g8', nom: 'Boubou Hibiscus Enfant', categorie: 'Enfant', tile: 'tile-hibiscus' },
-  { id: 'g9', nom: 'Robe de mariée Kente & Dentelle', categorie: 'Robe de mariée', tile: 'tile-kente', image: photos.images3 },
-  { id: 'g10', nom: 'Ensemble Wax Prêt-à-porter', categorie: 'Prêt-à-porter', tile: 'tile-wax', image: photos.images5 },
-  { id: 'g11', nom: 'Costume Enfant Bazin', categorie: 'Enfant', tile: 'tile-bazin' },
-  { id: 'g12', nom: 'Grand boubou Jacquard', categorie: 'Grand boubou', tile: 'tile-jacquard', image: photos.images6 },
+  { id: 'g1', nom: 'Boubou Wax Impérial', categorie: 'Grand boubou', tile: 'tile-wax', image: `${imageBase}/images7.jpg`, description: 'Un grand boubou sculpté dans un wax profond, pensé pour un impact visuel fort et une élégance intemporelle.' },
+  { id: 'g2', nom: 'Tailleur Bazin Riche', categorie: 'Tailleur', tile: 'tile-bazin', image: `${imageBase}/costume3.jpg`, description: 'Un tailleur sobre et luxueux en bazin, alliant coupe raffinée et matière soyeuse.' },
+  { id: 'g3', nom: 'Robe Dentelle Étoile', categorie: 'Robe de mariée', tile: 'tile-dentelle', image: `${imageBase}/images2.jpg`, description: 'Une robe de mariée délicate, entre transparence, broderie et lumière sculptée.' },
+  { id: 'g4', nom: 'Ensemble Kente Prestige', categorie: 'Grand boubou', tile: 'tile-kente', image: `${imageBase}/images10.jpg`, description: 'Un ensemble haut de gamme où le kente s’exprime avec une énergie chromatique et une noblesse affirmée.' },
+  { id: 'g5', nom: 'Costume Indigo Nuit', categorie: 'Tailleur', tile: 'tile-indigo', image: `${imageBase}/costume1.jpg`, description: 'Un costume d’après-midi et de soirée, conçu pour le glamour discret et le chic contemporain.' },
+  { id: 'g6', nom: 'Robe Soie Duchesse', categorie: 'Prêt-à-porter', tile: 'tile-soie', image: `${imageBase}/images9.jpg`, description: 'Une robe prêt-à-porter au drapé fluide, pensée pour la modernité avec une touche de luxe.' },
+  { id: 'g7', nom: 'Veste Jacquard Horizon', categorie: 'Tailleur', tile: 'tile-jacquard', image: `${imageBase}/images1.jpg`, description: 'Une veste structurée en jacquard, idéale pour des looks à la fois puissants et raffinés.' },
+  { id: 'g8', nom: 'Boubou Hibiscus Enfant', categorie: 'Enfant', tile: 'tile-hibiscus', image: `${imageBase}/images4.jpg`, description: 'Une pièce légère et joyeuse, conçue pour les occasions festives avec une touche de couleur.' },
+  { id: 'g9', nom: 'Robe de mariée Kente & Dentelle', categorie: 'Robe de mariée', tile: 'tile-kente', image: `${imageBase}/images3.jpg`, description: 'Une création de cérémonie où le kente rencontre la dentelle pour un mariage plein de caractère.' },
+  { id: 'g10', nom: 'Ensemble Wax Prêt-à-porter', categorie: 'Prêt-à-porter', tile: 'tile-wax', image: `${imageBase}/images5.jpg`, description: 'Un look accessible mais soigné, pensé pour une présence affirmée au quotidien comme en soirée.' },
+  { id: 'g11', nom: 'Costume Enfant Bazin', categorie: 'Enfant', tile: 'tile-bazin', image: `${imageBase}/costume2.jpg`, description: 'Une tenue enfantine élégante, confortable et pleine de douceur pour les grands rendez-vous.' },
+  { id: 'g12', nom: 'Grand boubou Jacquard', categorie: 'Grand boubou', tile: 'tile-jacquard', image: `${imageBase}/images6.jpg`, description: 'Une pièce majestueuse qui mêle tradition, texture et présence visuelle à chaque mouvement.' },
 ]

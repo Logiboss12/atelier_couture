@@ -1,8 +1,16 @@
 import TextileTile from '../../components/TextileTile.jsx'
 import StatusBadge from '../../components/StatusBadge.jsx'
-import { collections, products } from '../../mock/catalog.js'
+import { useFetch } from '../../api/useFetch.js'
+import { getCollections, getProducts } from '../../api/catalog.js'
 
 export default function Catalog() {
+  const { data: collections, loading: loadingCollections } = useFetch(getCollections, [])
+  const { data: products, loading: loadingProducts } = useFetch(getProducts, [])
+
+  if (loadingCollections || loadingProducts || !collections || !products) {
+    return <p className="text-muted">Chargement…</p>
+  }
+
   return (
     <div>
       <div className="eyebrow mb-2">Collections</div>

@@ -3,13 +3,25 @@ import { Link } from 'react-router-dom'
 import KpiCard from '../../components/KpiCard.jsx'
 import StatusBadge from '../../components/StatusBadge.jsx'
 import TextileTile from '../../components/TextileTile.jsx'
-import { recentOrders, orderStatuses } from '../../mock/orders.js'
+import { orderStatuses } from '../../mock/orders.js'
 import { relanceAlerts, dueSoon } from '../../mock/alerts.js'
-import { revenueByMonth } from '../../mock/finances.js'
+import { useFetch } from '../../api/useFetch.js'
+import { getRecentOrders } from '../../api/orders.js'
+import { getFinanceSummary } from '../../api/finances.js'
 
 const statusMap = Object.fromEntries(orderStatuses.map((s) => [s.id, s]))
 
+const MOIS_COURTS = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc']
+
 export default function Dashboard() {
+  const { data: recentOrders } = useFetch(() => getRecentOrders(5), [])
+  const { data: summary } = useFetch(getFinanceSummary, [])
+
+  const revenueByMonth = (summary?.revenue_by_month ?? []).map((r) => ({
+    mois: MOIS_COURTS[Number(r.mois.split('-')[1]) - 1],
+    ca: r.ca,
+  }))
+
   return (
     <div>
       <div className="row row-cols-2 row-cols-xl-5 g-3 mb-3">
@@ -69,7 +81,7 @@ export default function Dashboard() {
               <div className="eyebrow mb-0">Commandes récentes</div>
               <Link to="/admin/commandes" className="small">Voir tout</Link>
             </div>
-            {recentOrders.map((o) => (
+            {(recentOrders || []).map((o) => (
               <div key={o.id} className="d-flex align-items-center gap-3 border-bottom py-2" style={{ borderColor: 'var(--iro-border)' }}>
                 <TextileTile variant={o.tissu} style={{ width: 40, height: 40, flexShrink: 0 }} />
                 <div className="flex-grow-1">

@@ -1,5 +1,7 @@
 import TextileTile from '../../components/TextileTile.jsx'
-import { orders, orderStatuses } from '../../mock/orders.js'
+import { orderStatuses } from '../../mock/orders.js'
+import { useFetch } from '../../api/useFetch.js'
+import { getOrders } from '../../api/orders.js'
 
 function urgencyColor(dateStr) {
   const days = (new Date(dateStr) - new Date('2026-07-13')) / 86400000
@@ -9,6 +11,10 @@ function urgencyColor(dateStr) {
 }
 
 export default function Orders() {
+  const { data: orders, loading } = useFetch(getOrders, [])
+
+  if (loading || !orders) return <p className="text-muted">Chargement…</p>
+
   return (
     <div>
       <div className="d-flex justify-content-between align-items-center mb-3">

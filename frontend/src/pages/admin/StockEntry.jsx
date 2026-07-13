@@ -1,13 +1,22 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { textiles } from '../../mock/textiles.js'
-import { products } from '../../mock/catalog.js'
-import { recentEntries } from '../../mock/stock.js'
+import { useFetch } from '../../api/useFetch.js'
+import { getTextiles } from '../../api/textiles.js'
+import { getProducts } from '../../api/catalog.js'
+import { getRecentEntries } from '../../api/stock.js'
 
 export default function StockEntry() {
   const [type, setType] = useState('tissu')
   const [item, setItem] = useState(null)
   const [validated, setValidated] = useState(false)
+
+  const { data: textiles, loading: loadingTextiles } = useFetch(getTextiles, [])
+  const { data: products, loading: loadingProducts } = useFetch(getProducts, [])
+  const { data: recentEntries, loading: loadingEntries } = useFetch(getRecentEntries, [])
+
+  if (loadingTextiles || loadingProducts || loadingEntries || !textiles || !products || !recentEntries) {
+    return <p className="text-muted">Chargement…</p>
+  }
 
   const unite = type === 'tissu' ? 'm' : 'unités'
   const items = type === 'tissu' ? textiles.map((t) => t.nom) : products.map((p) => p.nom)

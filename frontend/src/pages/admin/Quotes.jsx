@@ -1,6 +1,12 @@
-import { quotes, invoicePreview } from '../../mock/quotes.js'
+import { useFetch } from '../../api/useFetch.js'
+import { getQuotes, getInvoicePreview } from '../../api/quotes.js'
 
 export default function Quotes() {
+  const { data: quotes, loading } = useFetch(getQuotes, [])
+  const { data: invoicePreview } = useFetch(getInvoicePreview, [])
+
+  if (loading || !quotes || !invoicePreview) return <p className="text-muted">Chargement…</p>
+
   return (
     <div className="row g-3">
       <div className="col-12 col-lg-7">

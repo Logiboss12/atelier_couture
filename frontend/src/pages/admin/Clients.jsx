@@ -1,16 +1,23 @@
 import { useState } from 'react'
 import StatusBadge from '../../components/StatusBadge.jsx'
 import TextileTile from '../../components/TextileTile.jsx'
-import { clients } from '../../mock/clients.js'
-import { orders } from '../../mock/orders.js'
+import { useFetch } from '../../api/useFetch.js'
+import { getClients } from '../../api/clients.js'
+import { getOrders } from '../../api/orders.js'
 
 export default function Clients() {
   const [search, setSearch] = useState('')
-  const [selectedId, setSelectedId] = useState(clients[0].id)
+  const [selectedId, setSelectedId] = useState(null)
+
+  const { data: clients, loading: loadingClients } = useFetch(getClients, [])
+  const { data: orders } = useFetch(getOrders, [])
+
+  if (loadingClients || !clients) return <p className="text-muted">Chargement…</p>
+  if (clients.length === 0) return <p className="text-muted">Aucun client enregistré.</p>
 
   const filtered = clients.filter((c) => c.nom.toLowerCase().includes(search.toLowerCase()))
   const selected = clients.find((c) => c.id === selectedId) || clients[0]
-  const history = orders.filter((o) => o.client === selected.nom)
+  const history = (orders || []).filter((o) => o.client === selected.nom)
 
   return (
     <div className="row g-3">

@@ -2,7 +2,8 @@ import { useState } from 'react'
 import StepProgress from '../../components/StepProgress.jsx'
 import TextileTile from '../../components/TextileTile.jsx'
 import { modelOptions, measurementFields } from '../../mock/customOrder.js'
-import { textiles } from '../../mock/textiles.js'
+import { useFetch } from '../../api/useFetch.js'
+import { getTextiles } from '../../api/textiles.js'
 
 const steps = ['Modèle', 'Tissu', 'Inspiration', 'Mensurations', 'Devis']
 
@@ -14,11 +15,13 @@ export default function CustomOrder() {
   const [measurements, setMeasurements] = useState({})
   const [sent, setSent] = useState(false)
 
+  const { data: textiles } = useFetch(getTextiles, [])
+
   const next = () => setStep((s) => Math.min(s + 1, steps.length - 1))
   const prev = () => setStep((s) => Math.max(s - 1, 0))
 
   const selectedModel = modelOptions.find((m) => m.id === model)
-  const selectedFabric = textiles.find((t) => t.id === fabric)
+  const selectedFabric = (textiles || []).find((t) => t.id === fabric)
 
   return (
     <div className="container" style={{ maxWidth: 920 }}>
@@ -53,7 +56,7 @@ export default function CustomOrder() {
 
         {step === 1 && (
           <div className="row row-cols-2 row-cols-md-3 g-3">
-            {textiles.map((t) => (
+            {(textiles || []).map((t) => (
               <div className="col" key={t.id}>
                 <button
                   type="button"

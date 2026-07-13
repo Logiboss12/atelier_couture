@@ -1,11 +1,13 @@
 export default function TextileTile({ variant = 'wax', image, className = '', style, children, ...rest }) {
   if (image) {
     return (
-      <div
-        className={`rounded-3 ${className}`}
-        style={{ ...style, backgroundImage: `url(${image})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
-        {...rest}
-      >
+      <div className={`position-relative rounded-3 overflow-hidden ${className}`} style={style} {...rest}>
+        <img
+          src={image}
+          alt=""
+          className="w-100 h-100 d-block"
+          style={{ objectFit: 'cover', objectPosition: 'center' }}
+        />
         {children}
       </div>
     )
