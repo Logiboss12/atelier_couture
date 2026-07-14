@@ -1,72 +1,47 @@
-# Maison Ìró — Atelier Couture
+# Maison Ìró — Frontend
 
-Application web de l'atelier de couture sur-mesure Maison Ìró (Dakar · Paris) : vitrine publique (galerie, boutique, sur-mesure, réservation) et back-office de gestion (clients, commandes, devis, stocks, finances).
+SPA React de l'atelier de couture Maison Ìró (vitrine publique + back-office). Voir le [README principal](../README.md) à la racine du monorepo pour la vue d'ensemble du projet (backend, authentification, routes, workflows métier).
 
-## Stack technique
+## Stack
 
 - [React 19](https://react.dev/) + [React Compiler](https://react.dev/learn/react-compiler)
-- [Vite 8](https://vite.dev/) (build & dev server)
-- [React Router](https://reactrouter.com/) pour le routage
-- [Bootstrap 5](https://getbootstrap.com/) + [Bootstrap Icons](https://icons.getbootstrap.com/) pour l'UI
-- [Recharts](https://recharts.org/) pour les graphiques du back-office
-- [Oxlint](https://oxc.rs/) pour le lint
-- [vite-plugin-pwa](https://vite-pwa-org.netlify.app/) pour le support PWA
+- [Vite 8](https://vite.dev/)
+- [React Router](https://reactrouter.com/)
+- [Bootstrap 5](https://getbootstrap.com/) + [Bootstrap Icons](https://icons.getbootstrap.com/)
+- [Recharts](https://recharts.org/) (graphiques back-office)
+- [Oxlint](https://oxc.rs/) (lint)
+- [vite-plugin-pwa](https://vite-pwa-org.netlify.app/) (PWA)
 
 ## Démarrage
 
 ```bash
 npm install
-npm run dev       # serveur de développement (http://localhost:5173)
+npm run dev       # http://localhost:5173 — nécessite l'API backend lancée (voir ../README.md)
 npm run build     # build de production dans dist/
 npm run preview   # prévisualise le build de production
-npm run lint      # lint du code avec Oxlint
+npm run lint      # lint avec Oxlint
 ```
 
-## Structure du projet
+Variable d'environnement (`.env`) :
+
+```
+VITE_API_URL=http://127.0.0.1:8000/api
+```
+
+## Structure
 
 ```
 src/
-├── assets/images/   # photos de l'atelier et des créations (index.js centralise les imports)
-├── components/      # composants partagés (navbar, footer, cartes, tuiles textiles…)
-├── context/         # contextes React (panier)
-├── mock/            # données de démonstration (catalogue, clients, galerie…)
+├── api/              # clients HTTP par domaine (auth, catalogue, commandes, devis, factures…)
+├── assets/images/    # photos (index.js centralise les imports)
+├── components/       # composants partagés (navbar, footer, cartes, tuiles textiles…)
+├── context/          # contextes React (panier, authentification)
+├── mock/             # données statiques restantes (contenu éditorial, config)
 ├── pages/
-│   ├── public/       # site vitrine
-│   └── admin/        # back-office
-├── App.jsx           # déclaration des routes
-└── main.jsx          # point d'entrée
+│   ├── public/        # site vitrine + espace client
+│   └── admin/         # back-office
+├── App.jsx
+└── main.jsx
 ```
 
-## Routes
-
-**Site public**
-
-| Route | Page |
-|---|---|
-| `/` | Accueil |
-| `/galerie` | Galerie de créations |
-| `/boutique` | Boutique prêt-à-porter |
-| `/sur-mesure` | Commande sur-mesure |
-| `/espace-client` | Espace client |
-| `/rendez-vous` | Prise de rendez-vous |
-| `/contact` | Contact |
-
-**Back-office** (`/admin`)
-
-| Route | Page |
-|---|---|
-| `/admin` | Tableau de bord |
-| `/admin/clients` | Clients |
-| `/admin/commandes` | Commandes |
-| `/admin/devis` | Devis |
-| `/admin/catalogue` | Catalogue |
-| `/admin/stocks`, `/admin/stocks/entree` | Stocks |
-| `/admin/promotions` | Promotions |
-| `/admin/finances` | Finances |
-| `/admin/livraisons` | Livraisons |
-| `/admin/equipe` | Équipe |
-| `/admin/parametres` | Paramètres |
-
-## Données
-
-Les données affichées proviennent actuellement de fichiers de simulation dans `src/mock/` (pas d'API backend connectée).
+Pour la liste complète des routes et les workflows métier (sur-mesure, boutique, validation admin), voir le [README principal](../README.md).

@@ -76,9 +76,7 @@ export default function Quotes() {
                 <div className="font-mono text-muted" style={{ fontSize: '.72rem' }}>{q.ref} · {q.modele}</div>
               </div>
               <div className="font-display">{q.montant.toLocaleString('fr-FR')} F</div>
-              <button type="button" className="btn btn-sm" style={{ background: 'var(--iro-green)', color: '#0a2b1c' }}>
-                ✓ Convertir
-              </button>
+              <span className="badge rounded-pill" style={{ background: 'rgba(255,255,255,.08)' }}>En attente du client</span>
             </div>
           ))}
         </div>

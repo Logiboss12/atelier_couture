@@ -6,7 +6,7 @@ import { getOrders } from '../../api/orders.js'
 import { createQuote } from '../../api/quotes.js'
 
 function urgencyColor(dateStr) {
-  const days = (new Date(dateStr) - new Date('2026-07-13')) / 86400000
+  const days = (new Date(dateStr) - new Date()) / 86400000
   if (days <= 1) return 'var(--iro-red)'
   if (days <= 3) return 'var(--iro-orange)'
   return 'var(--iro-faint)'

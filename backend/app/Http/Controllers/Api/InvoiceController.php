@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\CashMovement;
 use App\Models\Invoice;
 use Illuminate\Http\Request;
 
@@ -54,7 +55,20 @@ class InvoiceController extends Controller
             'statut' => 'nullable|in:en_attente,payee,partielle,impayee',
         ]);
 
+        $wasUnpaid = $invoice->statut !== 'payee';
+
         $invoice->update($data);
+
+        if ($wasUnpaid && $invoice->statut === 'payee') {
+            CashMovement::create([
+                'type' => 'in',
+                'label' => "Facture {$invoice->numero}",
+                'date' => now(),
+                'moyen_paiement' => $this->mapMoyenPaiement($invoice->mode_paiement),
+                'montant' => $invoice->total,
+                'order_id' => $invoice->order_id,
+            ]);
+        }
 
         return $invoice;
     }
@@ -64,5 +78,14 @@ class InvoiceController extends Controller
         $invoice->delete();
 
         return response()->noContent();
+    }
+
+    private function mapMoyenPaiement(?string $modePaiement): string
+    {
+        return match ($modePaiement) {
+            'especes_livraison' => 'especes',
+            'carte', 'mobile_money' => $modePaiement,
+            default => 'especes',
+        };
     }
 }

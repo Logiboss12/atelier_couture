@@ -6,16 +6,34 @@ import TextileTile from '../../components/TextileTile.jsx'
 import { orderStatuses } from '../../mock/orders.js'
 import { relanceAlerts, dueSoon } from '../../mock/alerts.js'
 import { useFetch } from '../../api/useFetch.js'
-import { getRecentOrders } from '../../api/orders.js'
+import { getOrders } from '../../api/orders.js'
 import { getFinanceSummary } from '../../api/finances.js'
 
 const statusMap = Object.fromEntries(orderStatuses.map((s) => [s.id, s]))
 
 const MOIS_COURTS = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc']
 
+function formatF(value) {
+  return `${(value ?? 0).toLocaleString('fr-FR')} F`
+}
+
 export default function Dashboard() {
-  const { data: recentOrders } = useFetch(() => getRecentOrders(5), [])
+  const { data: orders } = useFetch(getOrders, [])
   const { data: summary } = useFetch(getFinanceSummary, [])
+
+  const recentOrders = [...(orders || [])].sort((a, b) => b.id - a.id).slice(0, 5)
+
+  const now = new Date()
+  const commandesDuJour = (orders || []).filter((o) => o.echeance === now.toISOString().slice(0, 10)).length
+  const echeances48h = (orders || []).filter((o) => {
+    if (!o.echeance || o.statut === 'livree') return false
+    const hours = (new Date(o.echeance) - now) / 3600000
+    return hours >= 0 && hours <= 48
+  }).length
+
+  const rentabilite = summary?.entrees_mois > 0
+    ? Math.round((summary.benefice_net / summary.entrees_mois) * 100)
+    : 0
 
   const revenueByMonth = (summary?.revenue_by_month ?? []).map((r) => ({
     mois: MOIS_COURTS[Number(r.mois.split('-')[1]) - 1],
@@ -25,11 +43,11 @@ export default function Dashboard() {
   return (
     <div>
       <div className="row row-cols-2 row-cols-xl-5 g-3 mb-3">
-        <div className="col"><KpiCard icon="bi-scissors" label="Commandes du jour" value="7" delta="+2" color="var(--iro-text)" /></div>
-        <div className="col"><KpiCard icon="bi-alarm" label="Échéances 48h" value="4" delta="urgent" color="var(--iro-orange)" /></div>
-        <div className="col"><KpiCard icon="bi-cash-coin" label="Solde de caisse" value="18,4M F" delta="+6,2%" color="var(--iro-green)" /></div>
-        <div className="col"><KpiCard icon="bi-exclamation-circle" label="Impayés" value="1,2M F" delta="1 facture" color="var(--iro-red)" /></div>
-        <div className="col"><KpiCard icon="bi-graph-up-arrow" label="Rentabilité" value="58%" delta="+3 pts" color="var(--iro-violet)" /></div>
+        <div className="col"><KpiCard icon="bi-scissors" label="Commandes du jour" value={String(commandesDuJour)} color="var(--iro-text)" /></div>
+        <div className="col"><KpiCard icon="bi-alarm" label="Échéances 48h" value={String(echeances48h)} delta={echeances48h > 0 ? 'urgent' : ''} color="var(--iro-orange)" /></div>
+        <div className="col"><KpiCard icon="bi-cash-coin" label="Solde de caisse" value={formatF(summary?.solde)} color="var(--iro-green)" /></div>
+        <div className="col"><KpiCard icon="bi-exclamation-circle" label="Impayés" value={formatF(summary?.impayes)} delta={summary ? `${summary.impayes_count} facture(s)` : ''} color="var(--iro-red)" /></div>
+        <div className="col"><KpiCard icon="bi-graph-up-arrow" label="Rentabilité" value={`${rentabilite}%`} color="var(--iro-violet)" /></div>
       </div>
 
       <div className="row g-3 mb-3">

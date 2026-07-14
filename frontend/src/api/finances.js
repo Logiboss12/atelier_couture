@@ -36,6 +36,7 @@ export async function getFinanceKpis() {
     { label: 'Entrées (mois)', valeur: formatF(summary.entrees_mois), delta: '', color: 'var(--iro-blue)' },
     { label: 'Sorties (mois)', valeur: formatF(summary.sorties_mois), delta: '', color: 'var(--iro-orange)' },
     { label: 'Bénéfice net', valeur: formatF(summary.benefice_net), delta: '', color: 'var(--iro-violet)' },
+    { label: 'Impayés', valeur: formatF(summary.impayes), delta: `${summary.impayes_count} facture(s)`, color: 'var(--iro-red)' },
   ]
 }
 

@@ -1,9 +1,17 @@
 # Maison Ìró — Atelier Couture
 
-Application web de l'atelier de couture sur-mesure Maison Ìró (Dakar · Paris) : vitrine publique (galerie, boutique, sur-mesure, réservation) et back-office de gestion (clients, commandes, devis, stocks, finances).
+Application web de l'atelier de couture sur-mesure Maison Ìró (Dakar · Paris) : vitrine publique (galerie, boutique, sur-mesure, réservation, espace client) et back-office de gestion (clients, commandes, devis, factures, stocks, finances), adossés à une API Laravel.
+
+Le projet est un monorepo à deux dossiers :
+
+```
+backend/    # API Laravel (auth, données métier, MySQL)
+frontend/   # SPA React (vitrine + back-office)
+```
 
 ## Stack technique
 
+**Frontend**
 - [React 19](https://react.dev/) + [React Compiler](https://react.dev/learn/react-compiler)
 - [Vite 8](https://vite.dev/) (build & dev server)
 - [React Router](https://reactrouter.com/) pour le routage
@@ -12,9 +20,30 @@ Application web de l'atelier de couture sur-mesure Maison Ìró (Dakar · Paris)
 - [Oxlint](https://oxc.rs/) pour le lint
 - [vite-plugin-pwa](https://vite-pwa-org.netlify.app/) pour le support PWA
 
+**Backend**
+- [Laravel 12](https://laravel.com/) (PHP 8.5)
+- MySQL
+- Authentification par token Bearer maison (pas de Sanctum : voir [Authentification](#authentification))
+
 ## Démarrage
 
+### Backend (API)
+
 ```bash
+cd backend
+composer install
+cp .env.example .env        # renseigner DB_* et FRONTEND_URLS
+php artisan key:generate
+php artisan migrate --seed  # crée le schéma + un compte admin de test
+php artisan serve           # http://127.0.0.1:8000
+```
+
+Compte admin créé par le seeder : `admin@atelier-couture.test` / `admin1234` (à changer en production).
+
+### Frontend
+
+```bash
+cd frontend
 npm install
 npm run dev       # serveur de développement (http://localhost:5173)
 npm run build     # build de production dans dist/
@@ -22,22 +51,35 @@ npm run preview   # prévisualise le build de production
 npm run lint      # lint du code avec Oxlint
 ```
 
-## Structure du projet
+Le frontend attend l'API sur `VITE_API_URL` (`frontend/.env`, par défaut `http://127.0.0.1:8000/api`).
+
+## Structure du projet (frontend)
 
 ```
-src/
-├── assets/images/   # photos de l'atelier et des créations (index.js centralise les imports)
-├── components/      # composants partagés (navbar, footer, cartes, tuiles textiles…)
-├── context/         # contextes React (panier)
-├── mock/            # données de démonstration (catalogue, clients, galerie…)
+frontend/src/
+├── api/              # clients HTTP par domaine (auth, catalogue, commandes, devis, factures…)
+├── assets/images/    # photos de l'atelier et des créations (index.js centralise les imports)
+├── components/       # composants partagés (navbar, footer, cartes, tuiles textiles…)
+├── context/          # contextes React (panier, authentification)
+├── mock/             # données statiques restantes (voir « Données »)
 ├── pages/
-│   ├── public/       # site vitrine
-│   └── admin/        # back-office
-├── App.jsx           # déclaration des routes
-└── main.jsx          # point d'entrée
+│   ├── public/        # site vitrine + espace client
+│   └── admin/         # back-office
+├── App.jsx            # déclaration des routes
+└── main.jsx           # point d'entrée
 ```
 
-## Routes
+## Authentification
+
+L'API n'utilise pas Laravel Sanctum : l'authentification repose sur un système de token Bearer maison (table `auth_tokens`, tokens hashés en base, expiration 30 jours), volontairement simple car l'environnement de développement n'a pas d'accès Composer/Internet pour installer Sanctum.
+
+- Deux rôles : `admin` (accès back-office) et `client` (accès espace client).
+- Un compte `client` créé via `/inscription` est automatiquement relié (ou créé) à une fiche `Client` du CRM, par correspondance d'email.
+- Toutes les routes API métier (`clients`, `orders`, `quotes`, `invoices`, `finances`, `stocks`…) exigent le rôle `admin`. Seules les lectures du catalogue public (`textiles`, `collections`, `products`) sont ouvertes sans authentification.
+- Les routes `/auth/login` et `/auth/register` sont limitées en débit (`throttle`) et protégées par un verrou anti-brute-force côté serveur.
+- CORS restreint aux origines listées dans `FRONTEND_URLS` (backend `.env`).
+
+## Routes (frontend)
 
 **Site public**
 
@@ -46,19 +88,29 @@ src/
 | `/` | Accueil |
 | `/galerie` | Galerie de créations |
 | `/boutique` | Boutique prêt-à-porter |
-| `/sur-mesure` | Commande sur-mesure |
-| `/espace-client` | Espace client |
+| `/panier` | Panier & tunnel de commande (livraison, paiement, aperçu facture) |
+| `/commande/confirmation` | Confirmation de commande |
 | `/rendez-vous` | Prise de rendez-vous |
 | `/contact` | Contact |
+| `/connexion` | Connexion |
+| `/inscription` | Création de compte |
 
-**Back-office** (`/admin`)
+**Espace client** (connexion requise)
+
+| Route | Page |
+|---|---|
+| `/espace-client` | Suivi de commande, carnet de mesures, devis & factures, création d'une pièce sur-mesure |
+| `/devis/paiement` | Conversion d'un devis en commande définitive (livraison, paiement, plan intégral ou en tranches) |
+| `/facture/:id` | Facture (imprimable / téléchargeable une fois validée) |
+
+**Back-office** (`/admin`, rôle admin requis)
 
 | Route | Page |
 |---|---|
 | `/admin` | Tableau de bord |
 | `/admin/clients` | Clients |
-| `/admin/commandes` | Commandes |
-| `/admin/devis` | Devis |
+| `/admin/commandes` | Commandes (Kanban, envoi de devis) |
+| `/admin/devis` | Devis & Factures (validation des paiements en attente) |
 | `/admin/catalogue` | Catalogue |
 | `/admin/stocks`, `/admin/stocks/entree` | Stocks |
 | `/admin/promotions` | Promotions |
@@ -67,6 +119,18 @@ src/
 | `/admin/equipe` | Équipe |
 | `/admin/parametres` | Paramètres |
 
+## Workflows métier
+
+**Sur-mesure** : le client soumet une demande (modèle, tissu, mensurations) depuis l'espace client → l'atelier envoie un devis chiffré → le client le convertit en commande définitive en choisissant l'adresse de livraison, le mode de paiement et le plan (intégral ou acompte 50 % + solde à la livraison) → la ou les factures générées restent `en_attente` jusqu'à validation par un gestionnaire, qui les fait passer à `payée` (et alimente automatiquement les mouvements de caisse).
+
+**Boutique** : parcours du catalogue → panier → tunnel de commande (livraison, paiement) → facture `en_attente` (stock décrémenté immédiatement) → validation admin → facture téléchargeable.
+
 ## Données
 
-Les données affichées proviennent actuellement de fichiers de simulation dans `src/mock/` (pas d'API backend connectée).
+L'essentiel des données (clients, commandes, devis, factures, produits, collections, textiles, stocks, promotions, équipe, finances) provient de l'API Laravel / MySQL — plus aucune de ces données n'est simulée côté frontend.
+
+Restent en données statiques dans `src/mock/` (contenu éditorial ou non couvert par un modèle backend) :
+- `gallery.js`, `testimonials.js` : contenu de la page d'accueil et de la galerie.
+- `booking.js` : créneaux de rendez-vous (pas de modèle « réservation » côté API).
+- `orders.js` (`orderStatuses`), `customOrder.js` : configuration statique (libellés d'étapes, choix de modèles/mensurations), pas des données métier.
+- `alerts.js` : « alertes de relance » et « échéances 24/48h » du tableau de bord — widgets de démonstration non branchés à une logique réelle.

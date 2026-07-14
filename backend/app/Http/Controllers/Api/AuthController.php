@@ -30,7 +30,11 @@ class AuthController extends Controller
         ]);
 
         $client = Client::firstOrNew(['email' => $data['email']]);
+        $isNewClient = ! $client->exists;
         $client->fill(['nom' => $data['name'], 'user_id' => $user->id]);
+        if ($isNewClient) {
+            $client->client_depuis = now()->year;
+        }
         $client->save();
 
         return response()->json([

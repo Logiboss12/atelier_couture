@@ -53,18 +53,23 @@ export default function Clients() {
             <span className="rounded-circle flex-shrink-0" style={{ width: 64, height: 64, background: 'var(--iro-grad)' }}></span>
             <div className="flex-grow-1">
               <div className="font-display fs-3">{selected.nom}</div>
-              <div className="font-mono text-muted small">{selected.ville}, {selected.pays} · client depuis {selected.depuis}</div>
+              <div className="font-mono text-muted small">
+                {[selected.ville, selected.pays].filter(Boolean).join(', ') || 'Localisation inconnue'}
+                {selected.depuis ? ` · client depuis ${selected.depuis}` : ''}
+              </div>
             </div>
-            <a href={`https://wa.me/${selected.tel.replace(/\D/g, '')}`} target="_blank" rel="noreferrer" className="btn-ghost btn btn-sm">
-              <i className="bi bi-whatsapp me-1"></i>WhatsApp
-            </a>
+            {selected.tel && (
+              <a href={`https://wa.me/${selected.tel.replace(/\D/g, '')}`} target="_blank" rel="noreferrer" className="btn-ghost btn btn-sm">
+                <i className="bi bi-whatsapp me-1"></i>WhatsApp
+              </a>
+            )}
           </div>
 
           <div className="row row-cols-1 row-cols-md-2 g-3 mb-3">
             <div className="col">
               <div className="glass p-3 h-100">
                 <div className="eyebrow mb-2">Coordonnées</div>
-                <div className="d-flex justify-content-between border-bottom py-2" style={{ borderColor: 'var(--iro-border)' }}><span className="text-muted">Téléphone</span><span className="font-mono">{selected.tel}</span></div>
+                <div className="d-flex justify-content-between border-bottom py-2" style={{ borderColor: 'var(--iro-border)' }}><span className="text-muted">Téléphone</span><span className="font-mono">{selected.tel || '—'}</span></div>
                 <div className="d-flex justify-content-between border-bottom py-2" style={{ borderColor: 'var(--iro-border)' }}><span className="text-muted">Email</span><span className="font-mono small">{selected.email}</span></div>
                 <div className="d-flex justify-content-between py-2"><span className="text-muted">Commandes</span><span className="font-mono">{selected.commandes}</span></div>
               </div>
@@ -75,7 +80,7 @@ export default function Clients() {
                 {Object.entries(selected.mensurations).map(([k, v]) => (
                   <div key={k} className="d-flex justify-content-between border-bottom py-2" style={{ borderColor: 'var(--iro-border)' }}>
                     <span className="text-muted text-capitalize">{k}</span>
-                    <span className="font-mono">{v} cm</span>
+                    <span className="font-mono">{v != null ? `${v} cm` : '—'}</span>
                   </div>
                 ))}
               </div>
