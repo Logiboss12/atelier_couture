@@ -13,7 +13,7 @@ export default function Footer() {
           <ul className="list-unstyled d-flex flex-column gap-2 small">
             <li><Link to="/galerie">Galerie</Link></li>
             <li><Link to="/boutique">Boutique</Link></li>
-            <li><Link to="/sur-mesure">Sur-mesure</Link></li>
+            <li><Link to="/espace-client">Sur-mesure</Link></li>
             <li><Link to="/rendez-vous">Rendez-vous</Link></li>
           </ul>
         </div>

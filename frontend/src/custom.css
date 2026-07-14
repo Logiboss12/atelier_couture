@@ -161,3 +161,9 @@ a:hover{ color:var(--iro-orange); }
   .display-4{ font-size:clamp(1.8rem,7vw,2.5rem); }
   .display-5{ font-size:clamp(1.5rem,6vw,2rem); }
 }
+
+@media print{
+  .navbar, footer, .bg-mesh, .no-print{ display:none !important; }
+  body, .page-shell, main{ background:#fff !important; margin:0 !important; padding:0 !important; }
+  #invoice-printable{ box-shadow:none !important; }
+}

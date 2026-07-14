@@ -36,6 +36,11 @@ class Order extends Model
         return $this->hasMany(Invoice::class);
     }
 
+    public function quotes(): HasMany
+    {
+        return $this->hasMany(Quote::class);
+    }
+
     public function deliveries(): HasMany
     {
         return $this->hasMany(Delivery::class);

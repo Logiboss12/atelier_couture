@@ -15,9 +15,25 @@ export function CartProvider({ children }) {
     })
   }
 
-  const count = useMemo(() => items.reduce((sum, i) => sum + i.qty, 0), [items])
+  const incrementItem = (id) => {
+    setItems((prev) => prev.map((i) => (i.id === id ? { ...i, qty: i.qty + 1 } : i)))
+  }
 
-  const value = { items, addItem, count }
+  const decrementItem = (id) => {
+    setItems((prev) => prev
+      .map((i) => (i.id === id ? { ...i, qty: i.qty - 1 } : i))
+      .filter((i) => i.qty > 0))
+  }
+
+  const removeItem = (id) => {
+    setItems((prev) => prev.filter((i) => i.id !== id))
+  }
+
+  const count = useMemo(() => items.reduce((sum, i) => sum + i.qty, 0), [items])
+  const total = useMemo(() => items.reduce((sum, i) => sum + i.qty * i.prix, 0), [items])
+  const clearCart = () => setItems([])
+
+  const value = { items, addItem, incrementItem, decrementItem, removeItem, clearCart, count, total }
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>
 }
 

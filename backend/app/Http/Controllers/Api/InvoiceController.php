@@ -10,7 +10,7 @@ class InvoiceController extends Controller
 {
     public function index()
     {
-        return Invoice::with('client', 'lines')->latest('date')->get();
+        return Invoice::with('client', 'lines', 'order')->latest('date')->get();
     }
 
     public function store(Request $request)
@@ -21,7 +21,7 @@ class InvoiceController extends Controller
             'order_id' => 'nullable|exists:orders,id',
             'date' => 'required|date',
             'total' => 'required|integer|min:0',
-            'statut' => 'nullable|in:payee,partielle,impayee',
+            'statut' => 'nullable|in:en_attente,payee,partielle,impayee',
             'lignes' => 'nullable|array',
             'lignes.*.label' => 'required_with:lignes|string',
             'lignes.*.montant' => 'required_with:lignes|integer|min:0',
@@ -51,7 +51,7 @@ class InvoiceController extends Controller
             'order_id' => 'nullable|exists:orders,id',
             'date' => 'sometimes|required|date',
             'total' => 'sometimes|required|integer|min:0',
-            'statut' => 'nullable|in:payee,partielle,impayee',
+            'statut' => 'nullable|in:en_attente,payee,partielle,impayee',
         ]);
 
         $invoice->update($data);

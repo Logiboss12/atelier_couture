@@ -1,12 +1,19 @@
 import { useLocation, useNavigate } from 'react-router-dom'
 import { adminNavItems } from './AdminSidebar.jsx'
+import { useAuth } from '../context/AuthContext.jsx'
 
 export default function AdminTopbar() {
   const location = useLocation()
   const navigate = useNavigate()
+  const { user, logout } = useAuth()
   const current = [...adminNavItems].reverse().find((item) =>
     item.end ? location.pathname === item.to : location.pathname.startsWith(item.to)
   )
+
+  const handleLogout = async () => {
+    await logout()
+    navigate('/connexion')
+  }
 
   return (
     <div className="glass d-flex align-items-center justify-content-between gap-3 p-3 mb-3 sticky-top" style={{ top: '0.75rem', zIndex: 1020 }}>
@@ -41,6 +48,10 @@ export default function AdminTopbar() {
         </button>
         <button type="button" className="btn-iro btn btn-sm d-none d-sm-inline-flex" onClick={() => navigate('/admin/commandes')}>
           <i className="bi bi-plus-lg me-1"></i> Nouvelle commande
+        </button>
+        <span className="text-muted small d-none d-md-inline">{user?.name}</span>
+        <button type="button" className="btn btn-ghost btn-sm rounded-circle" aria-label="Déconnexion" onClick={handleLogout}>
+          <i className="bi bi-box-arrow-right"></i>
         </button>
       </div>
     </div>

@@ -4,6 +4,7 @@ function normalize(o) {
   return {
     id: o.id,
     ref: o.ref,
+    clientId: o.client_id,
     client: o.client?.nom ?? '',
     modele: o.modele,
     tissu: o.textile?.slug ?? 'wax',

@@ -1,18 +1,32 @@
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api'
+const TOKEN_KEY = 'iro_token'
 
-async function request(path, options = {}) {
+export function getToken() {
+  return localStorage.getItem(TOKEN_KEY)
+}
+
+export function setToken(token) {
+  if (token) localStorage.setItem(TOKEN_KEY, token)
+  else localStorage.removeItem(TOKEN_KEY)
+}
+
+export async function request(path, options = {}) {
+  const token = getToken()
+
   const res = await fetch(`${BASE_URL}${path}`, {
     ...options,
     headers: {
       Accept: 'application/json',
       'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...options.headers,
     },
   })
 
   if (!res.ok) {
     const body = await res.json().catch(() => null)
-    throw new Error(body?.message || `Requête API échouée (${res.status}) : ${path}`)
+    const message = body?.message || (body?.errors && Object.values(body.errors)[0]?.[0])
+    throw new Error(message || `Requête API échouée (${res.status}) : ${path}`)
   }
 
   if (res.status === 204) return null

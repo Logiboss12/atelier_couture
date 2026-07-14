@@ -1,13 +1,67 @@
+import { useState } from 'react'
 import { useFetch } from '../../api/useFetch.js'
 import { getQuotes, getInvoicePreview } from '../../api/quotes.js'
+import { getPendingInvoices, confirmInvoice } from '../../api/invoices.js'
+
+const paymentLabels = {
+  carte: 'Carte bancaire',
+  mobile_money: 'Mobile Money',
+  especes_livraison: 'Espèces à la livraison',
+}
 
 export default function Quotes() {
   const { data: quotes, loading } = useFetch(getQuotes, [])
   const { data: invoicePreview } = useFetch(getInvoicePreview, [])
+  const [refreshKey, setRefreshKey] = useState(0)
+  const { data: pendingInvoices } = useFetch(getPendingInvoices, [refreshKey])
+  const [confirmingId, setConfirmingId] = useState(null)
+
+  const handleConfirm = async (id) => {
+    setConfirmingId(id)
+    try {
+      await confirmInvoice(id)
+      setRefreshKey((k) => k + 1)
+    } finally {
+      setConfirmingId(null)
+    }
+  }
 
   if (loading || !quotes || !invoicePreview) return <p className="text-muted">Chargement…</p>
 
   return (
+    <div className="d-flex flex-column gap-3">
+      {pendingInvoices && pendingInvoices.length > 0 && (
+        <div className="glass p-3">
+          <div className="d-flex align-items-center justify-content-between mb-3">
+            <div className="eyebrow mb-0">Factures en attente de validation</div>
+            <span className="badge rounded-pill" style={{ background: 'var(--iro-orange)' }}>{pendingInvoices.length} à valider</span>
+          </div>
+          {pendingInvoices.map((inv) => (
+            <div key={inv.id} className="d-flex align-items-center gap-3 border-bottom py-3 flex-wrap" style={{ borderColor: 'var(--iro-border)' }}>
+              <div className="flex-grow-1">
+                <div className="small fw-semibold">{inv.client}</div>
+                <div className="font-mono text-muted" style={{ fontSize: '.72rem' }}>
+                  {inv.numero}{inv.orderRef ? ` · commande ${inv.orderRef}` : ''}
+                </div>
+                <div className="text-muted" style={{ fontSize: '.72rem' }}>
+                  {inv.adresseLivraison}, {inv.villeLivraison} · {inv.telLivraison} · {paymentLabels[inv.modePaiement] || inv.modePaiement}
+                </div>
+              </div>
+              <div className="font-display">{inv.total.toLocaleString('fr-FR')} F</div>
+              <button
+                type="button"
+                className="btn btn-sm"
+                style={{ background: 'var(--iro-green)', color: '#0a2b1c' }}
+                onClick={() => handleConfirm(inv.id)}
+                disabled={confirmingId === inv.id}
+              >
+                {confirmingId === inv.id ? '…' : '✓ Confirmer'}
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
     <div className="row g-3">
       <div className="col-12 col-lg-7">
         <div className="glass p-3">
@@ -61,6 +115,7 @@ export default function Quotes() {
           <button type="button" className="btn-iro btn flex-grow-1">Envoyer</button>
         </div>
       </div>
+    </div>
     </div>
   )
 }

@@ -1,18 +1,24 @@
-import { NavLink } from 'react-router-dom'
+import { NavLink, useNavigate } from 'react-router-dom'
 import { useCart } from '../context/CartContext.jsx'
+import { useAuth } from '../context/AuthContext.jsx'
 
 const links = [
   { to: '/', label: 'Accueil', end: true },
   { to: '/galerie', label: 'Galerie' },
   { to: '/boutique', label: 'Boutique' },
-  { to: '/sur-mesure', label: 'Sur-mesure' },
-  { to: '/espace-client', label: 'Espace client' },
   { to: '/rendez-vous', label: 'Rendez-vous' },
   { to: '/contact', label: 'Contact' },
 ]
 
 export default function PublicNavbar() {
   const cart = useCart()
+  const { user, isAdmin, logout } = useAuth()
+  const navigate = useNavigate()
+
+  const handleLogout = async () => {
+    await logout()
+    navigate('/')
+  }
 
   return (
     <nav className="navbar navbar-expand-lg fixed-top glass mx-2 mx-md-3 mt-2 rounded-4 px-2" style={{ zIndex: 1030 }}>
@@ -42,7 +48,7 @@ export default function PublicNavbar() {
             ))}
           </ul>
           <div className="d-flex align-items-center gap-2 pb-3 pb-lg-0">
-            <NavLink to="/boutique" className="btn-ghost btn btn-sm position-relative" aria-label="Voir le panier">
+            <NavLink to="/panier" className="btn-ghost btn btn-sm position-relative" aria-label="Voir le panier">
               <i className="bi bi-bag"></i>
               {cart?.count > 0 && (
                 <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill" style={{ background: 'var(--iro-magenta)' }}>
@@ -50,7 +56,22 @@ export default function PublicNavbar() {
                 </span>
               )}
             </NavLink>
-            <NavLink to="/sur-mesure" className="btn-iro btn btn-sm">Créer ma pièce</NavLink>
+            <NavLink to="/espace-client" className="btn-iro btn btn-sm">Créer ma pièce</NavLink>
+            {user ? (
+              <>
+                {isAdmin && (
+                  <NavLink to="/admin" className="btn-ghost btn btn-sm">Admin</NavLink>
+                )}
+                {!isAdmin && (
+                  <NavLink to="/espace-client" className="btn-ghost btn btn-sm">Mon espace</NavLink>
+                )}
+                <button type="button" className="btn-ghost btn btn-sm" onClick={handleLogout}>
+                  Déconnexion
+                </button>
+              </>
+            ) : (
+              <NavLink to="/connexion" className="btn-ghost btn btn-sm">Connexion</NavLink>
+            )}
           </div>
         </div>
       </div>

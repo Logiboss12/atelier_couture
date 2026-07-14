@@ -1,4 +1,8 @@
-import { apiList } from './client.js'
+import { apiList, apiCreate } from './client.js'
+
+export function createQuote(data) {
+  return apiCreate('quotes', data)
+}
 
 export async function getQuotes() {
   const rows = await apiList('quotes')

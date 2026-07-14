@@ -1,9 +1,24 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { galleryCategories, galleryItems } from '../../mock/gallery.js'
-
+import { galleryCategories } from '../../mock/gallery.js'
+import { photos } from '../../assets/images/index.js'
 export default function Gallery() {
   const [activeCategory, setActiveCategory] = useState('Tout')
+
+  const galleryItems = [
+    { id: 'g1', nom: 'Boubou Wax Impérial', categorie: 'Grand boubou', tile: 'tile-wax', image: photos.images7, description: 'Un grand boubou sculpté dans un wax profond, pensé pour un impact visuel fort et une élégance intemporelle.' },
+    { id: 'g2', nom: 'Tailleur Bazin Riche', categorie: 'Tailleur', tile: 'tile-bazin', image: photos.costume3, description: 'Un tailleur sobre et luxueux en bazin, alliant coupe raffinée et matière soyeuse.' },
+    { id: 'g3', nom: 'Robe Dentelle Étoile', categorie: 'Robe de mariée', tile: 'tile-dentelle', image: photos.images2, description: 'Une robe de mariée délicate, entre transparence, broderie et lumière sculptée.' },
+    { id: 'g4', nom: 'Ensemble Kente Prestige', categorie: 'Grand boubou', tile: 'tile-kente', image: photos.images10, description: 'Un ensemble haut de gamme où le kente s’exprime avec une énergie chromatique et une noblesse affirmée.' },
+    { id: 'g5', nom: 'Costume Indigo Nuit', categorie: 'Tailleur', tile: 'tile-indigo', image: photos.costume1, description: 'Un costume d’après-midi et de soirée, conçu pour le glamour discret et le chic contemporain.' },
+    { id: 'g6', nom: 'Robe Soie Duchesse', categorie: 'Prêt-à-porter', tile: 'tile-soie', image: photos.images9, description: 'Une robe prêt-à-porter au drapé fluide, pensée pour la modernité avec une touche de luxe.' },
+    { id: 'g7', nom: 'Veste Jacquard Horizon', categorie: 'Tailleur', tile: 'tile-jacquard', image: photos.images1, description: 'Une veste structurée en jacquard, idéale pour des looks à la fois puissants et raffinés.' },
+    { id: 'g8', nom: 'Boubou Hibiscus Enfant', categorie: 'Enfant', tile: 'tile-hibiscus', image: photos.images4, description: 'Une pièce légère et joyeuse, conçue pour les occasions festives avec une touche de couleur.' },
+    { id: 'g9', nom: 'Robe de mariée Kente & Dentelle', categorie: 'Robe de mariée', tile: 'tile-kente', image: photos.images3, description: 'Une création de cérémonie où le kente rencontre la dentelle pour un mariage plein de caractère.' },
+    { id: 'g10', nom: 'Ensemble Wax Prêt-à-porter', categorie: 'Prêt-à-porter', tile: 'tile-wax', image: photos.images5, description: 'Un look accessible mais soigné, pensé pour une présence affirmée au quotidien comme en soirée.' },
+    { id: 'g11', nom: 'Costume Enfant Bazin', categorie: 'Enfant', tile: 'tile-bazin', image: photos.costume2, description: 'Une tenue enfantine élégante, confortable et pleine de douceur pour les grands rendez-vous.' },
+    { id: 'g12', nom: 'Grand boubou Jacquard', categorie: 'Grand boubou', tile: 'tile-jacquard', image: photos.images6, description: 'Une pièce majestueuse qui mêle tradition, texture et présence visuelle à chaque mouvement.' },
+  ]
 
   const filtered = activeCategory === 'Tout'
     ? galleryItems
@@ -13,14 +28,14 @@ export default function Gallery() {
     <div className="container py-4 py-lg-5">
       <section className="row align-items-center g-4 g-lg-5 mb-5">
         <div className="col-12 col-lg-7">
-          <span className="eyebrow">Portfolio</span>
-          <h1 className="display-4 mt-3">Des créations qui racontent la couture entre deux continents</h1>
+          <span className="eyebrow">Galerie</span>
+          <h1 className="display-4 mt-3">Le meilleur de nos ateliers, capturé en images</h1>
           <p className="lead text-muted mt-3">
-            À travers les grands boubous, tailleurs raffinés, robes de mariée et pièces prêt-à-porter,
-            Maison Ìró compose des looks à la fois hérités et contemporains.
+            Découvrez nos réalisations sur-mesure : du grand boubou aux tailleurs structurés,
+            en passant par des robes de mariée et des pièces enfantines pleines de caractère.
           </p>
           <div className="d-flex flex-wrap gap-2 mt-4">
-            {['Sur-mesure', 'Matières nobles', 'Broderie & finitions', 'Dakar · Paris'].map((tag) => (
+            {['Coupe précise', 'Matières nobles', 'Finitions main', 'Dakar · Paris'].map((tag) => (
               <span key={tag} className="badge rounded-pill" style={{ background: 'rgba(255,255,255,.06)', border: '1px solid var(--iro-border)', color: 'var(--iro-text)' }}>{tag}</span>
             ))}
           </div>
@@ -31,21 +46,22 @@ export default function Gallery() {
             <div className="row g-3">
               <div className="col-6">
                 <div className="ratio ratio-1x1 rounded-3 overflow-hidden">
-                  <img src={galleryItems[0]?.image} alt="" className="w-100 h-100" style={{ objectFit: 'cover', objectPosition: 'center' }} />
+                  <img src={galleryItems[0]?.image} alt={galleryItems[0]?.nom} className="w-100 h-100" style={{ objectFit: 'cover', objectPosition: 'center' }} />
                 </div>
               </div>
               <div className="col-6">
                 <div className="ratio ratio-1x1 rounded-3 overflow-hidden">
-                  <img src={galleryItems[3]?.image} alt="" className="w-100 h-100" style={{ objectFit: 'cover', objectPosition: 'center' }} />
+                  <img src={galleryItems[3]?.image} alt={galleryItems[3]?.nom} className="w-100 h-100" style={{ objectFit: 'cover', objectPosition: 'center' }} />
                 </div>
               </div>
               <div className="col-12">
                 <div className="glass p-3 rounded-3" style={{ background: 'rgba(255,255,255,.05)' }}>
-                  <div className="font-display fs-5">Collection signature</div>
+                  <div className="font-display fs-5">Échantillon d’inspiration</div>
                   <p className="text-muted small mb-3 mt-2">
-                    Chaque pièce est pensée pour vous accompagner dans vos plus belles occasions, avec une vraie signature textile.
+                    Chaque image illustre notre approche : des formes affirmées, des détails travaillés et
+                    une élégance qui transcende les tendances.
                   </p>
-                  <Link to="/sur-mesure" className="btn-iro btn">Créer ma pièce</Link>
+                  <Link to="/sur-mesure" className="btn-iro btn">Commencer votre projet</Link>
                 </div>
               </div>
             </div>
@@ -56,9 +72,9 @@ export default function Gallery() {
       <section className="glass p-3 p-md-4 rounded-4 mb-4">
         <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
           <div>
-            <span className="eyebrow">Sélection</span>
-            <h2 className="display-6 mt-2 mb-1">Parcourir les créations</h2>
-            <p className="text-muted mb-0">Filtrez par univers pour découvrir l’inspiration qui vous ressemble.</p>
+            <span className="eyebrow">Collections</span>
+            <h2 className="display-6 mt-2 mb-1">Choisissez votre univers</h2>
+            <p className="text-muted mb-0">Affinez votre sélection par catégorie et explorez nos pièces les plus inspirantes.</p>
           </div>
 
           <div className="d-flex flex-wrap gap-2">
@@ -94,7 +110,7 @@ export default function Gallery() {
                 <p className="text-muted small mt-2 mb-3">{item.description}</p>
                 <div className="d-flex flex-wrap gap-2">
                   <span className="badge rounded-pill" style={{ background: 'rgba(255,138,61,.16)', color: 'var(--iro-orange)', border: '1px solid rgba(255,138,61,.25)' }}>{item.categorie}</span>
-                  <span className="badge rounded-pill" style={{ background: 'rgba(123,92,255,.16)', color: 'var(--iro-text)', border: '1px solid rgba(123,92,255,.25)' }}>Made-to-measure</span>
+                  <span className="badge rounded-pill" style={{ background: 'rgba(123,92,255,.16)', color: 'var(--iro-text)', border: '1px solid rgba(123,92,255,.25)' }}>Sur-mesure</span>
                 </div>
               </div>
             </article>
@@ -103,10 +119,10 @@ export default function Gallery() {
       </div>
 
       <section className="glass text-center p-4 p-md-5 rounded-4 mt-5" style={{ background: 'linear-gradient(120deg, rgba(255,138,61,.12), rgba(255,77,141,.12) 60%, rgba(123,92,255,.12))' }}>
-        <span className="eyebrow">Prendre rendez-vous</span>
-        <h2 className="display-6 mt-2 mb-3">Votre prochaine pièce mérite une vraie présence</h2>
-        <p className="text-muted mb-4">Découvrez les matières, les coupes et l’atelier qui donneront vie à votre projet.</p>
-        <Link to="/sur-mesure" className="btn-iro btn btn-lg">Réserver un atelier</Link>
+        <span className="eyebrow">Envie d’une pièce unique ?</span>
+        <h2 className="display-6 mt-2 mb-3">Réservez votre session de création</h2>
+        <p className="text-muted mb-4">Rencontrons-nous à Dakar ou Paris pour imaginer ensemble votre prochaine tenue.</p>
+        <Link to="/sur-mesure" className="btn-iro btn btn-lg">Réserver maintenant</Link>
       </section>
     </div>
   )
