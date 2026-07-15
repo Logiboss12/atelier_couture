@@ -12,12 +12,13 @@ export function setToken(token) {
 
 export async function request(path, options = {}) {
   const token = getToken()
+  const isFormData = options.body instanceof FormData
 
   const res = await fetch(`${BASE_URL}${path}`, {
     ...options,
     headers: {
       Accept: 'application/json',
-      'Content-Type': 'application/json',
+      ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...options.headers,
     },
@@ -52,4 +53,8 @@ export function apiUpdate(resource, id, data) {
 
 export function apiRemove(resource, id) {
   return request(`/${resource}/${id}`, { method: 'DELETE' })
+}
+
+export function apiUpload(path, formData) {
+  return request(path, { method: 'POST', body: formData })
 }

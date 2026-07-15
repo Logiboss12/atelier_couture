@@ -9,22 +9,32 @@ import { getProducts } from '../../api/catalog.js'
 const stockLabel = { ok: 'En stock', warn: 'Stock bas', danger: 'Rupture' }
 const money = (n) => `${Number(n || 0).toLocaleString('fr-FR')} F`
 
+const TYPE_LABELS = { vetement: 'Vêtements', mercerie: 'Mercerie' }
+
 export default function Shop() {
   const cart = useCart()
   const { data: products, loading } = useFetch(getProducts, [])
+  const [type, setType] = useState(null)
   const [categorie, setCategorie] = useState(null)
   const [taille, setTaille] = useState(null)
   const [maxPrix, setMaxPrix] = useState(650000)
 
   const shopProducts = useMemo(() => (products || []).filter((p) => p.publie !== false), [products])
-  const categories = useMemo(() => [...new Set(shopProducts.map((p) => p.categorie).filter(Boolean))], [shopProducts])
-  const tailles = useMemo(() => [...new Set(shopProducts.flatMap((p) => p.tailles || []))], [shopProducts])
+  const types = useMemo(() => [...new Set(shopProducts.map((p) => p.type).filter(Boolean))], [shopProducts])
+  const byType = useMemo(() => shopProducts.filter((p) => !type || p.type === type), [shopProducts, type])
+  const categories = useMemo(() => [...new Set(byType.map((p) => p.categorie).filter(Boolean))], [byType])
+  const tailles = useMemo(() => [...new Set(byType.flatMap((p) => p.tailles || []))], [byType])
 
-  const filtered = useMemo(() => shopProducts.filter((p) =>
+  const handleTypeChange = (t) => {
+    setType(type === t ? null : t)
+    setCategorie(null)
+  }
+
+  const filtered = useMemo(() => byType.filter((p) =>
     (!categorie || p.categorie === categorie) &&
     (!taille || (p.tailles || []).includes(taille)) &&
     p.prix <= maxPrix
-  ), [shopProducts, categorie, taille, maxPrix])
+  ), [byType, categorie, taille, maxPrix])
 
   return (
     <div className="container">
@@ -37,6 +47,23 @@ export default function Shop() {
           <i className="bi bi-bag me-1"></i> Panier
           {cart.count > 0 && <span className="badge rounded-pill ms-2" style={{ background: 'var(--iro-magenta)' }}>{cart.count}</span>}
         </Link>
+      </div>
+
+      <div className="d-flex flex-wrap gap-2 mb-4">
+        <button
+          type="button" className={`btn btn-sm ${!type ? 'btn-iro' : 'btn-ghost'}`}
+          onClick={() => handleTypeChange(null)}
+        >
+          Tous
+        </button>
+        {types.map((t) => (
+          <button
+            key={t} type="button" className={`btn btn-sm ${type === t ? 'btn-iro' : 'btn-ghost'}`}
+            onClick={() => handleTypeChange(t)}
+          >
+            {TYPE_LABELS[t] || t}
+          </button>
+        ))}
       </div>
 
       <div className="row g-4">
@@ -72,7 +99,13 @@ export default function Shop() {
               <div className="col" key={p.id}>
                 <div className="glass h-100 overflow-hidden">
                   <div className="position-relative">
-                    <TextileTile variant={p.tissu} className="ratio ratio-1x1 rounded-0"></TextileTile>
+                    {p.image ? (
+                      <div className="ratio ratio-1x1">
+                        <img src={p.image} alt={p.nom} style={{ objectFit: 'cover', width: '100%', height: '100%' }} />
+                      </div>
+                    ) : (
+                      <TextileTile variant={p.tissu} className="ratio ratio-1x1 rounded-0"></TextileTile>
+                    )}
                     <span className="position-absolute top-0 start-0 m-2">
                       <StatusBadge status={p.statut}>{stockLabel[p.statut]}</StatusBadge>
                     </span>

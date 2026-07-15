@@ -38,6 +38,11 @@ class Client extends Model
         return $this->hasMany(Delivery::class);
     }
 
+    public function notifications(): HasMany
+    {
+        return $this->hasMany(Notification::class);
+    }
+
     public function mensurations(): array
     {
         return [

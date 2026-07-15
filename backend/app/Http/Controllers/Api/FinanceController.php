@@ -51,10 +51,17 @@ class FinanceController extends Controller
             'pct' => $totalOut > 0 ? round($c['montant'] / $totalOut * 100) : 0,
         ]);
 
-        $revenueByMonth = $movements->where('type', 'in')
-            ->groupBy(fn ($m) => Carbon::parse($m->date)->format('Y-m'))
-            ->map(fn ($group, $mois) => ['mois' => $mois, 'ca' => $group->sum('montant')])
-            ->values();
+        $revenueGroupedByMonth = $movements->where('type', 'in')
+            ->groupBy(fn ($m) => Carbon::parse($m->date)->format('Y-m'));
+
+        $revenueByMonth = collect(range(5, 0))->map(function ($monthsAgo) use ($revenueGroupedByMonth) {
+            $mois = now()->subMonths($monthsAgo)->format('Y-m');
+
+            return [
+                'mois' => $mois,
+                'ca' => $revenueGroupedByMonth->get($mois, collect())->sum('montant'),
+            ];
+        });
 
         return response()->json([
             'solde' => $solde,

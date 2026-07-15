@@ -1,4 +1,4 @@
-import { apiList } from './client.js'
+import { apiList, apiUpdate } from './client.js'
 
 function normalize(o) {
   return {
@@ -22,4 +22,8 @@ export async function getOrders() {
 export async function getRecentOrders(limit = 5) {
   const orders = await getOrders()
   return [...orders].sort((a, b) => b.id - a.id).slice(0, limit)
+}
+
+export function updateOrderStatus(id, statut) {
+  return apiUpdate('orders', id, { statut })
 }

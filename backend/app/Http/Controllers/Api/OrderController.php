@@ -50,7 +50,13 @@ class OrderController extends Controller
             'echeance' => 'sometimes|required|date',
         ]);
 
+        $previousStatut = $order->statut;
+
         $order->update($data);
+
+        if (isset($data['statut']) && $data['statut'] !== $previousStatut) {
+            $order->notifyStatusChange();
+        }
 
         return $order;
     }

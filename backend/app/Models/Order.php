@@ -8,6 +8,14 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Order extends Model
 {
+    private const STATUS_LABELS = [
+        'recue' => 'Reçue',
+        'encours' => 'En cours',
+        'finition' => 'Finition',
+        'prete' => 'Prête',
+        'livree' => 'Livrée',
+    ];
+
     protected $fillable = [
         'ref', 'client_id', 'textile_id', 'team_member_id', 'modele', 'statut', 'echeance',
     ];
@@ -49,5 +57,25 @@ class Order extends Model
     public function cashMovements(): HasMany
     {
         return $this->hasMany(CashMovement::class);
+    }
+
+    public function notifications(): HasMany
+    {
+        return $this->hasMany(Notification::class);
+    }
+
+    public function notifyStatusChange(): void
+    {
+        if (! $this->client_id) {
+            return;
+        }
+
+        $label = self::STATUS_LABELS[$this->statut] ?? $this->statut;
+
+        $this->notifications()->create([
+            'client_id' => $this->client_id,
+            'type' => 'order_status',
+            'message' => "Votre commande {$this->ref} ({$this->modele}) est passée à « {$label} ».",
+        ]);
     }
 }

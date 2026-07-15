@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Textile;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class TextileController extends Controller
 {
@@ -44,8 +45,28 @@ class TextileController extends Controller
         return $textile;
     }
 
+    public function uploadImage(Request $request, Textile $textile)
+    {
+        $request->validate([
+            'image' => 'required|image|max:4096',
+        ]);
+
+        if ($textile->image) {
+            Storage::disk('public')->delete($textile->image);
+        }
+
+        $path = $request->file('image')->store('textiles', 'public');
+        $textile->update(['image' => $path]);
+
+        return $textile;
+    }
+
     public function destroy(Textile $textile)
     {
+        if ($textile->image) {
+            Storage::disk('public')->delete($textile->image);
+        }
+
         $textile->delete();
 
         return response()->noContent();

@@ -19,3 +19,7 @@ export function getMyInvoice(id) {
 export function convertQuote(id, payload) {
   return request(`/me/quotes/${id}/convert`, { method: 'POST', body: JSON.stringify(payload) })
 }
+
+export function markNotificationRead(id) {
+  return request(`/me/notifications/${id}/read`, { method: 'POST' })
+}

@@ -118,53 +118,101 @@ export default function ClientArea() {
           )}
 
           {active === 'docs' && (
-            <div className="row g-3">
-              <div className="col-12 col-md-6">
-                <div className="glass p-3">
-                  <div className="eyebrow mb-2">Devis</div>
-                  {(client?.quotes || []).length === 0 && <p className="text-muted small mb-0">Aucun devis.</p>}
-                  {(client?.quotes || []).map((q) => (
-                    <div key={q.id} className="border-bottom py-2" style={{ borderColor: 'var(--iro-border)' }}>
-                      <div className="d-flex justify-content-between align-items-center gap-2">
-                        <div className="small">{q.ref} — {q.modele}</div>
-                        <StatusBadge status={quoteBadgeStatus[q.statut] || 'neutral'}>{quoteStatusLabels[q.statut] || q.statut}</StatusBadge>
-                        <div className="font-mono text-muted" style={{ fontSize: '.75rem' }}>{money(q.montant)}</div>
+            <div className="d-flex flex-column gap-4">
+              <div>
+                <div className="eyebrow mb-3">Devis</div>
+                {(client?.quotes || []).length === 0 && (
+                  <div className="glass p-4 text-muted">Aucun devis pour le moment.</div>
+                )}
+                <div className="d-flex flex-column gap-3">
+                  {(client?.quotes || []).map((q) => {
+                    const hasBreakdown = q.montant_matieres != null || q.montant_main_oeuvre != null
+                    return (
+                      <div className="glass p-4" key={q.id}>
+                        <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+                          <div>
+                            <div className="font-mono text-muted small">{q.ref}</div>
+                            <div className="font-display fs-5">{q.modele}</div>
+                            {q.order && (
+                              <div className="text-muted small">Commande {q.order.ref}</div>
+                            )}
+                          </div>
+                          <StatusBadge status={quoteBadgeStatus[q.statut] || 'neutral'}>{quoteStatusLabels[q.statut] || q.statut}</StatusBadge>
+                        </div>
+
+                        <div className="row row-cols-2 row-cols-md-3 g-2 mb-3">
+                          {hasBreakdown && (
+                            <>
+                              <div className="col">
+                                <div className="glass p-3 h-100">
+                                  <div className="eyebrow" style={{ fontSize: '.65rem' }}>Matières premières</div>
+                                  <div className="font-display fs-6">{money(q.montant_matieres)}</div>
+                                </div>
+                              </div>
+                              <div className="col">
+                                <div className="glass p-3 h-100">
+                                  <div className="eyebrow" style={{ fontSize: '.65rem' }}>Main d'œuvre</div>
+                                  <div className="font-display fs-6">{money(q.montant_main_oeuvre)}</div>
+                                </div>
+                              </div>
+                            </>
+                          )}
+                          <div className="col">
+                            <div className="glass p-3 h-100">
+                              <div className="eyebrow" style={{ fontSize: '.65rem' }}>Total</div>
+                              <div className="font-display fs-6 text-gradient">{money(q.montant)}</div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {q.echeance && (
+                          <div className="text-muted small mb-3">
+                            <i className="bi bi-calendar-event me-2"></i>
+                            Livraison estimée : {new Date(q.echeance).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                          </div>
+                        )}
+
+                        {q.statut === 'en_attente' && (
+                          <button
+                            type="button"
+                            className="btn-iro btn btn-sm"
+                            onClick={() => navigate('/devis/paiement', { state: { quote: q } })}
+                          >
+                            Convertir en commande
+                          </button>
+                        )}
                       </div>
-                      {q.statut === 'en_attente' && (
-                        <button
-                          type="button"
-                          className="btn-iro btn btn-sm mt-2"
-                          onClick={() => navigate('/devis/paiement', { state: { quote: q } })}
-                        >
-                          Convertir en commande
-                        </button>
-                      )}
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               </div>
-              <div className="col-12 col-md-6">
-                <div className="glass p-3">
-                  <div className="eyebrow mb-2">Factures</div>
-                  {(client?.invoices || []).length === 0 && <p className="text-muted small mb-0">Aucune facture.</p>}
+
+              <div>
+                <div className="eyebrow mb-3">Factures</div>
+                {(client?.invoices || []).length === 0 && (
+                  <div className="glass p-4 text-muted">Aucune facture pour le moment.</div>
+                )}
+                <div className="d-flex flex-column gap-3">
                   {(client?.invoices || []).map((inv) => (
-                    <div key={inv.id} className="border-bottom py-2" style={{ borderColor: 'var(--iro-border)' }}>
-                      <div className="d-flex justify-content-between align-items-center gap-2">
-                        <div className="small">Facture {inv.numero}</div>
+                    <div className="glass p-4" key={inv.id}>
+                      <div className="d-flex align-items-center justify-content-between gap-2 mb-2">
+                        <div className="font-mono text-muted small">Facture {inv.numero}</div>
                         <StatusBadge status={invoiceBadgeStatus[inv.statut] || 'neutral'}>{invoiceStatusLabels[inv.statut] || inv.statut}</StatusBadge>
-                        <div className="font-mono text-muted" style={{ fontSize: '.75rem' }}>{money(inv.total)}</div>
                       </div>
                       {(inv.lines || []).map((line) => (
-                        <div key={line.id} className="d-flex justify-content-between text-muted" style={{ fontSize: '.72rem' }}>
+                        <div key={line.id} className="d-flex justify-content-between text-muted border-bottom py-1" style={{ fontSize: '.8rem', borderColor: 'var(--iro-border)' }}>
                           <span>{line.label}</span>
-                          <span>{money(line.montant)}</span>
+                          <span className="font-mono">{money(line.montant)}</span>
                         </div>
                       ))}
-                      {inv.statut !== 'en_attente' && (
-                        <Link to={`/facture/${inv.id}`} className="btn-ghost btn btn-sm mt-2">
-                          <i className="bi bi-download me-1"></i>Télécharger
-                        </Link>
-                      )}
+                      <div className="d-flex justify-content-between align-items-center pt-2">
+                        <span className="font-display">{money(inv.total)}</span>
+                        {inv.statut !== 'en_attente' && (
+                          <Link to={`/facture/${inv.id}`} className="btn-ghost btn btn-sm">
+                            <i className="bi bi-download me-1"></i>Télécharger
+                          </Link>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>

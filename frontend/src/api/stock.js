@@ -1,4 +1,4 @@
-import { apiList } from './client.js'
+import { apiList, apiCreate } from './client.js'
 import { getProducts } from './catalog.js'
 
 const STATUT_LABEL = { ok: 'OK', warn: 'Bas', danger: 'Rupture proche' }
@@ -71,6 +71,10 @@ export async function getStockMovements() {
       date: (m.date || '').slice(0, 10),
       quantite: `${m.type === 'in' ? '+' : '-'}${Number(m.quantite_valeur)} ${m.quantite_unite}`,
     }))
+}
+
+export function createStockMovement(data) {
+  return apiCreate('stock-movements', data)
 }
 
 export async function getRecentEntries() {

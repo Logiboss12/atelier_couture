@@ -4,10 +4,11 @@ import KpiCard from '../../components/KpiCard.jsx'
 import StatusBadge from '../../components/StatusBadge.jsx'
 import TextileTile from '../../components/TextileTile.jsx'
 import { orderStatuses } from '../../mock/orders.js'
-import { relanceAlerts, dueSoon } from '../../mock/alerts.js'
+import { dueSoon } from '../../mock/alerts.js'
 import { useFetch } from '../../api/useFetch.js'
 import { getOrders } from '../../api/orders.js'
 import { getFinanceSummary } from '../../api/finances.js'
+import { getRelanceAlerts } from '../../api/alerts.js'
 
 const statusMap = Object.fromEntries(orderStatuses.map((s) => [s.id, s]))
 
@@ -20,6 +21,7 @@ function formatF(value) {
 export default function Dashboard() {
   const { data: orders } = useFetch(getOrders, [])
   const { data: summary } = useFetch(getFinanceSummary, [])
+  const { data: relanceAlerts } = useFetch(getRelanceAlerts, [])
 
   const recentOrders = [...(orders || [])].sort((a, b) => b.id - a.id).slice(0, 5)
 
@@ -77,7 +79,10 @@ export default function Dashboard() {
           <div className="glass p-3 h-100">
             <div className="eyebrow mb-3">Alertes de relance</div>
             <div className="d-flex flex-column">
-              {relanceAlerts.map((a) => (
+              {(relanceAlerts || []).length === 0 && (
+                <p className="text-muted small mb-0">Aucune relance en attente.</p>
+              )}
+              {(relanceAlerts || []).map((a) => (
                 <div key={a.id} className="d-flex align-items-center gap-3 border-bottom py-2" style={{ borderColor: 'var(--iro-border)' }}>
                   <span className="rounded-circle flex-shrink-0" style={{ width: 10, height: 10, background: a.color }}></span>
                   <div className="flex-grow-1">
@@ -85,6 +90,18 @@ export default function Dashboard() {
                     <div className="text-muted font-mono" style={{ fontSize: '.7rem' }}>{a.meta}</div>
                   </div>
                   <StatusBadge status={a.tagStatus}>{a.tag}</StatusBadge>
+                  {a.tel ? (
+                    <a
+                      href={`https://wa.me/${a.tel.replace(/\D/g, '')}?text=${encodeURIComponent(a.message)}`}
+                      target="_blank" rel="noreferrer"
+                      className="btn-ghost btn btn-sm"
+                      aria-label={`Relancer ${a.clientNom} par WhatsApp`}
+                    >
+                      <i className="bi bi-whatsapp"></i>
+                    </a>
+                  ) : (
+                    <span className="text-muted" style={{ fontSize: '.65rem' }} title="Pas de téléphone">—</span>
+                  )}
                 </div>
               ))}
             </div>

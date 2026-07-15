@@ -1,6 +1,7 @@
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useCart } from '../context/CartContext.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
+import NotificationBell from './NotificationBell.jsx'
 
 const links = [
   { to: '/', label: 'Accueil', end: true },
@@ -63,7 +64,10 @@ export default function PublicNavbar() {
                   <NavLink to="/admin" className="btn-ghost btn btn-sm">Admin</NavLink>
                 )}
                 {!isAdmin && (
-                  <NavLink to="/espace-client" className="btn-ghost btn btn-sm">Mon espace</NavLink>
+                  <>
+                    <NotificationBell />
+                    <NavLink to="/espace-client" className="btn-ghost btn btn-sm">Mon espace</NavLink>
+                  </>
                 )}
                 <button type="button" className="btn-ghost btn btn-sm" onClick={handleLogout}>
                   Déconnexion

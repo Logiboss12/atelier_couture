@@ -1,24 +1,32 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { galleryCategories } from '../../mock/gallery.js'
-import { photos } from '../../assets/images/index.js'
-export default function Gallery() {
-  const [activeCategory, setActiveCategory] = useState('Tout')
+import TextileTile from '../../components/TextileTile.jsx'
+import { useFetch } from '../../api/useFetch.js'
+import { getProducts } from '../../api/catalog.js'
 
-  const galleryItems = [
-    { id: 'g1', nom: 'Boubou Wax Impérial', categorie: 'Grand boubou', tile: 'tile-wax', image: photos.images7, description: 'Un grand boubou sculpté dans un wax profond, pensé pour un impact visuel fort et une élégance intemporelle.' },
-    { id: 'g2', nom: 'Tailleur Bazin Riche', categorie: 'Tailleur', tile: 'tile-bazin', image: photos.costume3, description: 'Un tailleur sobre et luxueux en bazin, alliant coupe raffinée et matière soyeuse.' },
-    { id: 'g3', nom: 'Robe Dentelle Étoile', categorie: 'Robe de mariée', tile: 'tile-dentelle', image: photos.images2, description: 'Une robe de mariée délicate, entre transparence, broderie et lumière sculptée.' },
-    { id: 'g4', nom: 'Ensemble Kente Prestige', categorie: 'Grand boubou', tile: 'tile-kente', image: photos.images10, description: 'Un ensemble haut de gamme où le kente s’exprime avec une énergie chromatique et une noblesse affirmée.' },
-    { id: 'g5', nom: 'Costume Indigo Nuit', categorie: 'Tailleur', tile: 'tile-indigo', image: photos.costume1, description: 'Un costume d’après-midi et de soirée, conçu pour le glamour discret et le chic contemporain.' },
-    { id: 'g6', nom: 'Robe Soie Duchesse', categorie: 'Prêt-à-porter', tile: 'tile-soie', image: photos.images9, description: 'Une robe prêt-à-porter au drapé fluide, pensée pour la modernité avec une touche de luxe.' },
-    { id: 'g7', nom: 'Veste Jacquard Horizon', categorie: 'Tailleur', tile: 'tile-jacquard', image: photos.images1, description: 'Une veste structurée en jacquard, idéale pour des looks à la fois puissants et raffinés.' },
-    { id: 'g8', nom: 'Boubou Hibiscus Enfant', categorie: 'Enfant', tile: 'tile-hibiscus', image: photos.images4, description: 'Une pièce légère et joyeuse, conçue pour les occasions festives avec une touche de couleur.' },
-    { id: 'g9', nom: 'Robe de mariée Kente & Dentelle', categorie: 'Robe de mariée', tile: 'tile-kente', image: photos.images3, description: 'Une création de cérémonie où le kente rencontre la dentelle pour un mariage plein de caractère.' },
-    { id: 'g10', nom: 'Ensemble Wax Prêt-à-porter', categorie: 'Prêt-à-porter', tile: 'tile-wax', image: photos.images5, description: 'Un look accessible mais soigné, pensé pour une présence affirmée au quotidien comme en soirée.' },
-    { id: 'g11', nom: 'Costume Enfant Bazin', categorie: 'Enfant', tile: 'tile-bazin', image: photos.costume2, description: 'Une tenue enfantine élégante, confortable et pleine de douceur pour les grands rendez-vous.' },
-    { id: 'g12', nom: 'Grand boubou Jacquard', categorie: 'Grand boubou', tile: 'tile-jacquard', image: photos.images6, description: 'Une pièce majestueuse qui mêle tradition, texture et présence visuelle à chaque mouvement.' },
-  ]
+const TYPE_LABELS = { vetement: 'Vêtements', mercerie: 'Mercerie' }
+
+export default function Gallery() {
+  const [activeType, setActiveType] = useState(null)
+  const [activeCategory, setActiveCategory] = useState('Tout')
+  const { data: products, loading } = useFetch(getProducts, [])
+
+  const published = useMemo(() => (products || []).filter((p) => p.publie !== false), [products])
+  const types = useMemo(() => [...new Set(published.map((p) => p.type).filter(Boolean))], [published])
+  const galleryItems = useMemo(
+    () => published.filter((p) => !activeType || p.type === activeType),
+    [published, activeType]
+  )
+
+  const categories = useMemo(
+    () => ['Tout', ...new Set(galleryItems.map((g) => g.categorie).filter(Boolean))],
+    [galleryItems]
+  )
+
+  const handleTypeChange = (t) => {
+    setActiveType(activeType === t ? null : t)
+    setActiveCategory('Tout')
+  }
 
   const filtered = activeCategory === 'Tout'
     ? galleryItems
@@ -46,22 +54,30 @@ export default function Gallery() {
             <div className="row g-3">
               <div className="col-6">
                 <div className="ratio ratio-1x1 rounded-3 overflow-hidden">
-                  <img src={galleryItems[0]?.image} alt={galleryItems[0]?.nom} className="w-100 h-100" style={{ objectFit: 'cover', objectPosition: 'center' }} />
+                  {galleryItems[0]?.image ? (
+                    <img src={galleryItems[0].image} alt={galleryItems[0]?.nom} className="w-100 h-100" style={{ objectFit: 'cover', objectPosition: 'center' }} />
+                  ) : (
+                    <TextileTile variant={galleryItems[0]?.tissu} className="w-100 h-100 rounded-0" />
+                  )}
                 </div>
               </div>
               <div className="col-6">
                 <div className="ratio ratio-1x1 rounded-3 overflow-hidden">
-                  <img src={galleryItems[3]?.image} alt={galleryItems[3]?.nom} className="w-100 h-100" style={{ objectFit: 'cover', objectPosition: 'center' }} />
+                  {galleryItems[1]?.image ? (
+                    <img src={galleryItems[1].image} alt={galleryItems[1]?.nom} className="w-100 h-100" style={{ objectFit: 'cover', objectPosition: 'center' }} />
+                  ) : (
+                    <TextileTile variant={galleryItems[1]?.tissu} className="w-100 h-100 rounded-0" />
+                  )}
                 </div>
               </div>
               <div className="col-12">
                 <div className="glass p-3 rounded-3" style={{ background: 'rgba(255,255,255,.05)' }}>
-                  <div className="font-display fs-5">Échantillon d’inspiration</div>
+                  <div className="font-display fs-5">Échantillon d'inspiration</div>
                   <p className="text-muted small mb-3 mt-2">
                     Chaque image illustre notre approche : des formes affirmées, des détails travaillés et
                     une élégance qui transcende les tendances.
                   </p>
-                  <Link to="/sur-mesure" className="btn-iro btn">Commencer votre projet</Link>
+                  <Link to="/espace-client" className="btn-iro btn">Commencer votre projet</Link>
                 </div>
               </div>
             </div>
@@ -70,28 +86,45 @@ export default function Gallery() {
       </section>
 
       <section className="glass p-3 p-md-4 rounded-4 mb-4">
-        <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
-          <div>
-            <span className="eyebrow">Collections</span>
-            <h2 className="display-6 mt-2 mb-1">Choisissez votre univers</h2>
-            <p className="text-muted mb-0">Affinez votre sélection par catégorie et explorez nos pièces les plus inspirantes.</p>
-          </div>
+        <div>
+          <span className="eyebrow">Collections</span>
+          <h2 className="display-6 mt-2 mb-1">Choisissez votre univers</h2>
+          <p className="text-muted mb-0">Affinez votre sélection par catégorie et explorez nos pièces les plus inspirantes.</p>
+        </div>
 
-          <div className="d-flex flex-wrap gap-2">
-            {galleryCategories.map((cat) => (
-              <button
-                key={cat}
-                type="button"
-                className={`btn rounded-pill ${activeCategory === cat ? 'btn-iro' : 'btn-ghost btn-sm'}`}
-                onClick={() => setActiveCategory(cat)}
-                aria-pressed={activeCategory === cat}
-              >
-                {cat}
-              </button>
-            ))}
-          </div>
+        <div className="d-flex flex-wrap gap-2 mt-3">
+          <button
+            type="button" className={`btn btn-sm ${!activeType ? 'btn-iro' : 'btn-ghost'}`}
+            onClick={() => handleTypeChange(null)}
+          >
+            Tout
+          </button>
+          {types.map((t) => (
+            <button
+              key={t} type="button" className={`btn btn-sm ${activeType === t ? 'btn-iro' : 'btn-ghost'}`}
+              onClick={() => handleTypeChange(t)}
+            >
+              {TYPE_LABELS[t] || t}
+            </button>
+          ))}
+        </div>
+
+        <div className="d-flex flex-wrap gap-2 mt-3">
+          {categories.map((cat) => (
+            <button
+              key={cat}
+              type="button"
+              className={`btn rounded-pill ${activeCategory === cat ? 'btn-iro' : 'btn-ghost btn-sm'}`}
+              onClick={() => setActiveCategory(cat)}
+              aria-pressed={activeCategory === cat}
+            >
+              {cat}
+            </button>
+          ))}
         </div>
       </section>
+
+      {loading && <p className="text-muted">Chargement…</p>}
 
       <div className="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4">
         {filtered.map((item) => (
@@ -99,30 +132,38 @@ export default function Gallery() {
             <article className="glass hover-lift h-100 overflow-hidden">
               <div className="position-relative">
                 <div className="ratio ratio-4x5 overflow-hidden">
-                  <img src={item.image} alt={item.nom} className="w-100 h-100" style={{ objectFit: 'cover', objectPosition: 'center' }} />
+                  {item.image ? (
+                    <img src={item.image} alt={item.nom} className="w-100 h-100" style={{ objectFit: 'cover', objectPosition: 'center' }} />
+                  ) : (
+                    <TextileTile variant={item.tissu} className="w-100 h-100 rounded-0" />
+                  )}
                 </div>
                 <div className="position-absolute top-0 start-0 p-3">
-                  <span className="status neutral">{item.categorie}</span>
+                  <span className="status neutral">{item.categorie || 'Création'}</span>
                 </div>
               </div>
               <div className="p-4">
                 <div className="font-display fs-5">{item.nom}</div>
-                <p className="text-muted small mt-2 mb-3">{item.description}</p>
-                <div className="d-flex flex-wrap gap-2">
-                  <span className="badge rounded-pill" style={{ background: 'rgba(255,138,61,.16)', color: 'var(--iro-orange)', border: '1px solid rgba(255,138,61,.25)' }}>{item.categorie}</span>
+                <div className="d-flex flex-wrap gap-2 mt-3">
+                  {item.categorie && (
+                    <span className="badge rounded-pill" style={{ background: 'rgba(255,138,61,.16)', color: 'var(--iro-orange)', border: '1px solid rgba(255,138,61,.25)' }}>{item.categorie}</span>
+                  )}
                   <span className="badge rounded-pill" style={{ background: 'rgba(123,92,255,.16)', color: 'var(--iro-text)', border: '1px solid rgba(123,92,255,.25)' }}>Sur-mesure</span>
                 </div>
               </div>
             </article>
           </div>
         ))}
+        {!loading && filtered.length === 0 && (
+          <p className="text-muted">Aucune création dans cette catégorie pour le moment.</p>
+        )}
       </div>
 
       <section className="glass text-center p-4 p-md-5 rounded-4 mt-5" style={{ background: 'linear-gradient(120deg, rgba(255,138,61,.12), rgba(255,77,141,.12) 60%, rgba(123,92,255,.12))' }}>
-        <span className="eyebrow">Envie d’une pièce unique ?</span>
+        <span className="eyebrow">Envie d'une pièce unique ?</span>
         <h2 className="display-6 mt-2 mb-3">Réservez votre session de création</h2>
         <p className="text-muted mb-4">Rencontrons-nous à Dakar ou Paris pour imaginer ensemble votre prochaine tenue.</p>
-        <Link to="/sur-mesure" className="btn-iro btn btn-lg">Réserver maintenant</Link>
+        <Link to="/espace-client" className="btn-iro btn btn-lg">Réserver maintenant</Link>
       </section>
     </div>
   )

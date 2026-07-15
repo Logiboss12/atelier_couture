@@ -32,6 +32,7 @@ Route::middleware('auth.token')->group(function () {
     Route::post('me/checkout', [MeController::class, 'checkout']);
     Route::get('me/invoices/{invoice}', [MeController::class, 'showInvoice']);
     Route::post('me/quotes/{quote}/convert', [MeController::class, 'convertQuote']);
+    Route::post('me/notifications/{notification}/read', [MeController::class, 'markNotificationRead']);
 });
 
 // Public storefront reads: catalog data anyone may browse.
@@ -47,8 +48,10 @@ Route::middleware(['auth.token', 'admin'])->group(function () {
     Route::get('finances/summary', [FinanceController::class, 'summary']);
 
     Route::apiResource('textiles', TextileController::class)->except(['index', 'show']);
+    Route::post('textiles/{textile}/image', [TextileController::class, 'uploadImage']);
     Route::apiResource('collections', ProductCollectionController::class)->except(['index', 'show']);
     Route::apiResource('products', ProductController::class)->except(['index', 'show']);
+    Route::post('products/{product}/image', [ProductController::class, 'uploadImage']);
 
     Route::apiResource('team-members', TeamMemberController::class);
     Route::apiResource('clients', ClientController::class);

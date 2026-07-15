@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Invoice;
+use App\Models\Notification;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\Quote;
@@ -20,12 +21,22 @@ class MeController extends Controller
             'orders' => fn ($q) => $q->with('textile')->latest('echeance'),
             'quotes.order',
             'invoices.lines',
+            'notifications' => fn ($q) => $q->latest(),
         ])->first();
 
         return response()->json([
             'user' => $user,
             'client' => $client,
         ]);
+    }
+
+    public function markNotificationRead(Request $request, Notification $notification)
+    {
+        abort_unless($notification->client_id === $request->user()->client?->id, 403);
+
+        $notification->update(['read_at' => now()]);
+
+        return $notification;
     }
 
     public function storeOrder(Request $request)

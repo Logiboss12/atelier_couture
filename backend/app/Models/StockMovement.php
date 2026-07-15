@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class StockMovement extends Model
 {
     protected $fillable = [
-        'type', 'label', 'quantite_valeur', 'quantite_unite', 'fournisseur', 'date', 'fabric_stock_id', 'order_id',
+        'type', 'label', 'quantite_valeur', 'quantite_unite', 'fournisseur', 'date', 'fabric_stock_id', 'product_id', 'order_id',
     ];
 
     protected $casts = [
@@ -18,6 +18,11 @@ class StockMovement extends Model
     public function fabricStock(): BelongsTo
     {
         return $this->belongsTo(FabricStock::class);
+    }
+
+    public function product(): BelongsTo
+    {
+        return $this->belongsTo(Product::class);
     }
 
     public function order(): BelongsTo

@@ -1,7 +1,11 @@
+import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import TextileTile from '../../components/TextileTile.jsx'
-import { heroStats, materials, featuredCreations, testimonials } from '../../mock/testimonials.js'
+import { heroStats, testimonials } from '../../mock/testimonials.js'
 import { photos } from '../../assets/images/index.js'
+import { useFetch } from '../../api/useFetch.js'
+import { getProducts } from '../../api/catalog.js'
+import { getTextiles } from '../../api/textiles.js'
 
 const ringTiles = ['wax', 'kente', 'indigo', 'hibiscus', 'jacquard', 'dentelle']
 const marqueeWords = ['WAX', 'KENTE', 'BAZIN', 'JACQUARD', 'INDIGO', 'DENTELLE', 'SOIE', 'BOGOLAN']
@@ -16,6 +20,18 @@ const ringImages = {
 }
 
 export default function Home() {
+  const { data: products } = useFetch(getProducts, [])
+  const { data: textiles } = useFetch(getTextiles, [])
+
+  const featuredCreations = useMemo(
+    () => (products || [])
+      .filter((p) => p.publie !== false && p.type === 'vetement')
+      .slice(0, 3),
+    [products]
+  )
+
+  const materials = textiles || []
+
   return (
     <div className="container">
       {/* Hero */}
@@ -30,7 +46,7 @@ export default function Home() {
             pour des pièces uniques, taillées pour vous.
           </p>
           <div className="d-flex flex-wrap gap-3 mt-4">
-            <Link to="/sur-mesure" className="btn-iro btn btn-lg">Créer ma pièce</Link>
+            <Link to="/espace-client" className="btn-iro btn btn-lg">Créer ma pièce</Link>
             <Link to="/galerie" className="btn-ghost btn btn-lg">Voir la galerie</Link>
           </div>
           <div className="d-flex flex-wrap gap-4 mt-5">
@@ -121,14 +137,17 @@ export default function Home() {
           {featuredCreations.map((c) => (
             <div className="col" key={c.id}>
               <div className="glass hover-lift h-100 overflow-hidden">
-                <TextileTile variant={c.tile.replace('tile-', '')} image={c.image} className="ratio ratio-4x3 rounded-0"></TextileTile>
+                <TextileTile variant={c.tissu} image={c.image} className="ratio ratio-4x3 rounded-0"></TextileTile>
                 <div className="card-body p-3">
                   <div className="font-display fs-5">{c.nom}</div>
-                  <div className="text-muted small">{c.desc}</div>
+                  <div className="text-muted small">{c.categorie}</div>
                 </div>
               </div>
             </div>
           ))}
+          {featuredCreations.length === 0 && (
+            <p className="text-muted">Aucune création publiée pour le moment.</p>
+          )}
         </div>
       </section>
 
@@ -136,14 +155,21 @@ export default function Home() {
       <section className="py-5">
         <span className="eyebrow">Matières</span>
         <h2 className="display-6 mt-2 mb-4">Un textile pour chaque récit</h2>
-        <div className="row row-cols-2 row-cols-lg-6 g-3">
-          {materials.map((m) => (
-            <div className="col" key={m.id}>
-              <TextileTile variant={m.tile.replace('tile-', '')} className="ratio ratio-1x1 d-flex align-items-end p-2 hover-scale">
-                <span className="font-mono small text-white text-uppercase" style={{ textShadow: '0 2px 6px rgba(0,0,0,.5)' }}>{m.nom}</span>
-              </TextileTile>
-            </div>
-          ))}
+        <div className="overflow-hidden">
+          <div className="marquee-track gap-3">
+            {[...materials, ...materials].map((m, i) => (
+              <div key={`${m.id}-${i}`} className="flex-shrink-0" style={{ width: 160 }}>
+                <TextileTile
+                  variant={m.tile?.replace('tile-', '')}
+                  image={m.image}
+                  className="ratio ratio-1x1 d-flex align-items-end p-2 hover-scale"
+                >
+                  <span className="font-mono small text-white text-uppercase" style={{ textShadow: '0 2px 6px rgba(0,0,0,.5)' }}>{m.nom}</span>
+                </TextileTile>
+              </div>
+            ))}
+          </div>
+          {materials.length === 0 && <p className="text-muted">Aucun tissu enregistré pour le moment.</p>}
         </div>
       </section>
 
@@ -170,7 +196,7 @@ export default function Home() {
       <section className="glass text-center p-5 rounded-4 my-5" style={{ background: 'linear-gradient(120deg, rgba(255,138,61,.12), rgba(255,77,141,.12) 60%, rgba(123,92,255,.12))' }}>
         <h2 className="display-5 mb-3">Prêt·e à porter votre histoire ?</h2>
         <p className="text-muted mb-4">Réservez un rendez-vous ou lancez votre commande sur-mesure dès aujourd'hui.</p>
-        <Link to="/sur-mesure" className="btn-iro btn btn-lg">Commencer ma commande</Link>
+        <Link to="/espace-client" className="btn-iro btn btn-lg">Commencer ma commande</Link>
       </section>
     </div>
   )

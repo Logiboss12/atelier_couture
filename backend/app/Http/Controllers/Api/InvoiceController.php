@@ -55,7 +55,8 @@ class InvoiceController extends Controller
             'statut' => 'nullable|in:en_attente,payee,partielle,impayee',
         ]);
 
-        $wasUnpaid = $invoice->statut !== 'payee';
+        $previousStatut = $invoice->statut;
+        $wasUnpaid = $previousStatut !== 'payee';
 
         $invoice->update($data);
 
@@ -68,6 +69,14 @@ class InvoiceController extends Controller
                 'montant' => $invoice->total,
                 'order_id' => $invoice->order_id,
             ]);
+        }
+
+        $becamePaidOrPartial = in_array($invoice->statut, ['payee', 'partielle'])
+            && ! in_array($previousStatut, ['payee', 'partielle']);
+
+        if ($becamePaidOrPartial && $invoice->order && $invoice->order->statut === 'recue') {
+            $invoice->order->update(['statut' => 'encours']);
+            $invoice->order->notifyStatusChange();
         }
 
         return $invoice;

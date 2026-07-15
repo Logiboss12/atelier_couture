@@ -5,17 +5,14 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class Quote extends Model
+class Notification extends Model
 {
-    protected $fillable = [
-        'ref', 'client_id', 'order_id', 'modele', 'montant',
-        'montant_matieres', 'montant_main_oeuvre', 'echeance', 'statut',
-    ];
+    protected $fillable = ['client_id', 'order_id', 'type', 'message', 'read_at'];
 
     protected function casts(): array
     {
         return [
-            'echeance' => 'date',
+            'read_at' => 'datetime',
         ];
     }
 
