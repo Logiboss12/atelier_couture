@@ -5,7 +5,7 @@ Application web de l'atelier de couture sur-mesure Maison Ìró (Dakar · Paris)
 Le projet est un monorepo à deux dossiers :
 
 ```
-backend/    # API Laravel (auth, données métier, MySQL)
+backend/    # API Laravel (auth, données métier, MySQL, fichiers)
 frontend/   # SPA React (vitrine + back-office)
 ```
 
@@ -24,6 +24,7 @@ frontend/   # SPA React (vitrine + back-office)
 - [Laravel 12](https://laravel.com/) (PHP 8.5)
 - MySQL
 - Authentification par token Bearer maison (pas de Sanctum : voir [Authentification](#authentification))
+- Stockage de fichiers local (disque `public` + lien symbolique) pour les photos de produits/tissus
 
 ## Démarrage
 
@@ -34,7 +35,8 @@ cd backend
 composer install
 cp .env.example .env        # renseigner DB_* et FRONTEND_URLS
 php artisan key:generate
-php artisan migrate --seed  # crée le schéma + un compte admin de test
+php artisan storage:link    # requis pour servir les photos (produits, tissus)
+php artisan migrate --seed  # crée le schéma + données de démo + un compte admin de test
 php artisan serve           # http://127.0.0.1:8000
 ```
 
@@ -53,13 +55,15 @@ npm run lint      # lint du code avec Oxlint
 
 Le frontend attend l'API sur `VITE_API_URL` (`frontend/.env`, par défaut `http://127.0.0.1:8000/api`).
 
+⚠️ `APP_URL` (backend `.env`) doit correspondre à l'adresse réelle du serveur (`http://127.0.0.1:8000` par défaut) : c'est cette valeur qui sert à générer les URLs des photos uploadées.
+
 ## Structure du projet (frontend)
 
 ```
 frontend/src/
 ├── api/              # clients HTTP par domaine (auth, catalogue, commandes, devis, factures…)
-├── assets/images/    # photos de l'atelier et des créations (index.js centralise les imports)
-├── components/       # composants partagés (navbar, footer, cartes, tuiles textiles…)
+├── assets/images/    # photos de démonstration (index.js centralise les imports)
+├── components/       # composants partagés (navbar, cloche de notifications, cartes, tuiles textiles…)
 ├── context/          # contextes React (panier, authentification)
 ├── mock/             # données statiques restantes (voir « Données »)
 ├── pages/
@@ -86,8 +90,8 @@ L'API n'utilise pas Laravel Sanctum : l'authentification repose sur un système 
 | Route | Page |
 |---|---|
 | `/` | Accueil |
-| `/galerie` | Galerie de créations |
-| `/boutique` | Boutique prêt-à-porter |
+| `/galerie` | Galerie de créations (filtrable par grande catégorie et sous-catégorie) |
+| `/boutique` | Boutique (vêtements, mercerie, tissus au mètre) |
 | `/panier` | Panier & tunnel de commande (livraison, paiement, aperçu facture) |
 | `/commande/confirmation` | Confirmation de commande |
 | `/rendez-vous` | Prise de rendez-vous |
@@ -107,12 +111,12 @@ L'API n'utilise pas Laravel Sanctum : l'authentification repose sur un système 
 
 | Route | Page |
 |---|---|
-| `/admin` | Tableau de bord |
+| `/admin` | Tableau de bord (KPIs réels, CA 6 derniers mois, alertes de relance) |
 | `/admin/clients` | Clients |
-| `/admin/commandes` | Commandes (Kanban, envoi de devis) |
+| `/admin/commandes` | Commandes (Kanban glisser-déposer, envoi de devis chiffré) |
 | `/admin/devis` | Devis & Factures (validation des paiements en attente) |
-| `/admin/catalogue` | Catalogue |
-| `/admin/stocks`, `/admin/stocks/entree` | Stocks |
+| `/admin/catalogue` | Catalogue (Vêtements / Mercerie / Tissus, photos, prix) |
+| `/admin/stocks`, `/admin/stocks/entree` | Stocks (mouvements réels tissus/articles) |
 | `/admin/promotions` | Promotions |
 | `/admin/finances` | Finances |
 | `/admin/livraisons` | Livraisons |
@@ -121,16 +125,20 @@ L'API n'utilise pas Laravel Sanctum : l'authentification repose sur un système 
 
 ## Workflows métier
 
-**Sur-mesure** : le client soumet une demande (modèle, tissu, mensurations) depuis l'espace client → l'atelier envoie un devis chiffré → le client le convertit en commande définitive en choisissant l'adresse de livraison, le mode de paiement et le plan (intégral ou acompte 50 % + solde à la livraison) → la ou les factures générées restent `en_attente` jusqu'à validation par un gestionnaire, qui les fait passer à `payée` (et alimente automatiquement les mouvements de caisse).
+**Sur-mesure** : le client soumet une demande (modèle, tissu, mensurations) depuis l'espace client → l'atelier envoie un devis chiffré (matières premières, main d'œuvre, échéance de livraison) → le client le convertit en commande définitive en choisissant l'adresse de livraison, le mode de paiement et le plan (intégral ou acompte 50 % + solde à la livraison) → la ou les factures générées restent `en_attente` jusqu'à validation par un gestionnaire, qui les fait passer à `payée` (et alimente automatiquement les mouvements de caisse).
 
-**Boutique** : parcours du catalogue → panier → tunnel de commande (livraison, paiement) → facture `en_attente` (stock décrémenté immédiatement) → validation admin → facture téléchargeable.
+**Boutique** : parcours du catalogue (vêtements, mercerie, tissus au mètre) → panier (articles mélangés) → tunnel de commande (livraison, paiement) → facture `en_attente` (stock décrémenté immédiatement) → validation admin → facture téléchargeable.
+
+**Suivi de commande** : dès qu'une facture liée à une commande passe à `payée`/`partielle`, la commande quitte automatiquement l'étape « Reçue » pour « En cours ». L'admin fait ensuite progresser la commande par glisser-déposer dans le Kanban (`En cours` → `Finition` → `Prête` → `Livrée`). Chaque changement de statut (automatique ou manuel) génère une **notification** pour le client, visible via la cloche dans la navbar — jamais un nouveau devis.
+
+**Catalogue** : les articles sont organisés en trois grandes catégories — **Vêtements**, **Mercerie** et **Tissus** — chacune avec ses propres sous-catégories. L'admin gère le nom, le prix, le stock et la **photo** de chaque article (upload direct, stocké sur le disque `public` de Laravel). Les tissus ont en plus un prix au mètre optionnel : s'il est renseigné, le tissu devient achetable dans la boutique (sinon il reste une matière interne, visible seulement en gestion de stock).
 
 ## Données
 
-L'essentiel des données (clients, commandes, devis, factures, produits, collections, textiles, stocks, promotions, équipe, finances) provient de l'API Laravel / MySQL — plus aucune de ces données n'est simulée côté frontend.
+L'essentiel des données (clients, commandes, devis, factures, produits, collections, textiles, stocks, promotions, équipe, finances, notifications) provient de l'API Laravel / MySQL — la Boutique, la Galerie et la page d'Accueil affichent toutes le vrai catalogue publié par l'admin (photos comprises), plus aucune de ces données n'est simulée côté frontend.
 
 Restent en données statiques dans `src/mock/` (contenu éditorial ou non couvert par un modèle backend) :
-- `gallery.js`, `testimonials.js` : contenu de la page d'accueil et de la galerie.
+- `testimonials.js` (`heroStats`, `testimonials`) : témoignages et chiffres clés de la page d'accueil.
 - `booking.js` : créneaux de rendez-vous (pas de modèle « réservation » côté API).
 - `orders.js` (`orderStatuses`), `customOrder.js` : configuration statique (libellés d'étapes, choix de modèles/mensurations), pas des données métier.
-- `alerts.js` : « alertes de relance » et « échéances 24/48h » du tableau de bord — widgets de démonstration non branchés à une logique réelle.
+- `alerts.js` (`dueSoon`) : widget « Échéances 24/48h » du tableau de bord, encore en démonstration (les « Alertes de relance » juste au-dessus, elles, sont réelles).
