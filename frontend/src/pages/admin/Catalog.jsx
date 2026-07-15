@@ -312,6 +312,7 @@ function TissusPanel({ textiles, onChanged }) {
               <div className="p-3">
                 <div className="small fw-semibold">{t.nom}</div>
                 <div className="text-muted font-mono" style={{ fontSize: '.7rem' }}>{t.origine}</div>
+                <div className="font-display small mt-1">{t.prix ? `${money(t.prix)} / m` : 'Non vendu'}</div>
                 <div className="d-flex gap-2 mt-2">
                   <button type="button" className="btn-ghost btn btn-sm flex-grow-1" onClick={() => setEditing(t)}>
                     <i className="bi bi-pencil"></i>
@@ -336,6 +337,8 @@ function TextileForm({ textile, onSaved, onCancel }) {
   const [slug, setSlug] = useState(textile?.slug ?? '')
   const [origine, setOrigine] = useState(textile?.origine ?? '')
   const [tile, setTile] = useState(textile?.tile?.replace('tile-', '') ?? TILE_OPTIONS[0])
+  const [prix, setPrix] = useState(textile?.prix ?? '')
+  const [publie, setPublie] = useState(textile?.publie ?? true)
   const [imageFile, setImageFile] = useState(null)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
@@ -350,6 +353,8 @@ function TextileForm({ textile, onSaved, onCancel }) {
         slug: slug || nom.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
         origine: origine || null,
         tile: `tile-${tile}`,
+        prix: prix === '' ? null : Number(prix),
+        publie,
       }
       const saved = isEdit ? await updateTextile(textile.id, payload) : await createTextile(payload)
 
@@ -399,6 +404,15 @@ function TextileForm({ textile, onSaved, onCancel }) {
             {TILE_OPTIONS.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
           </select>
         </div>
+        <div className="col-12 col-sm-6">
+          <label className="font-mono small d-block mb-1">Prix au mètre (F) — vide = non vendu en boutique</label>
+          <input type="number" className="form-control" min="0" placeholder="Ex. 8000" value={prix} onChange={(e) => setPrix(e.target.value)} />
+        </div>
+      </div>
+
+      <div className="form-check form-switch mt-3">
+        <input className="form-check-input" type="checkbox" role="switch" checked={publie} onChange={(e) => setPublie(e.target.checked)} id="textile-publie" />
+        <label className="form-check-label small" htmlFor="textile-publie">Publié (visible sur le site)</label>
       </div>
 
       {error && (

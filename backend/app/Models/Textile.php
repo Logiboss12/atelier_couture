@@ -4,13 +4,18 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Facades\Storage;
 
 class Textile extends Model
 {
-    protected $fillable = ['slug', 'nom', 'origine', 'tile', 'image'];
+    protected $fillable = ['slug', 'nom', 'origine', 'tile', 'image', 'prix', 'publie'];
 
     protected $appends = ['image_url'];
+
+    protected $casts = [
+        'publie' => 'boolean',
+    ];
 
     public function getImageUrlAttribute(): ?string
     {
@@ -30,5 +35,10 @@ class Textile extends Model
     public function fabricStocks(): HasMany
     {
         return $this->hasMany(FabricStock::class);
+    }
+
+    public function fabricStock(): HasOne
+    {
+        return $this->hasOne(FabricStock::class);
     }
 }

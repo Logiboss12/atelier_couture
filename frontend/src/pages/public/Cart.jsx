@@ -44,7 +44,11 @@ export default function Cart() {
     setError(null)
     try {
       const invoice = await checkout({
-        items: cart.items.map((i) => ({ product_id: i.id, quantite: i.qty })),
+        items: cart.items.map((i) => (
+          i.kind === 'textile'
+            ? { textile_id: i.id, quantite: i.qty }
+            : { product_id: i.id, quantite: i.qty }
+        )),
         adresse_livraison: adresse,
         ville_livraison: ville,
         tel_livraison: tel,
@@ -81,23 +85,23 @@ export default function Cart() {
       {step === 0 && (
         <div className="glass p-4 mb-4">
           {cart.items.map((i) => (
-            <div key={i.id} className="d-flex align-items-center justify-content-between flex-wrap gap-2 border-bottom py-3" style={{ borderColor: 'var(--iro-border)' }}>
+            <div key={`${i.kind}-${i.id}`} className="d-flex align-items-center justify-content-between flex-wrap gap-2 border-bottom py-3" style={{ borderColor: 'var(--iro-border)' }}>
               <div>
                 <div className="fw-semibold">{i.nom}</div>
-                <div className="font-mono text-muted small">{money(i.prix)} / unité</div>
+                <div className="font-mono text-muted small">{money(i.prix)} / {i.unite}</div>
               </div>
               <div className="d-flex align-items-center gap-3">
                 <div className="d-flex align-items-center gap-2">
-                  <button type="button" className="btn btn-ghost btn-sm rounded-circle" onClick={() => cart.decrementItem(i.id)} aria-label={`Diminuer la quantité de ${i.nom}`}>
+                  <button type="button" className="btn btn-ghost btn-sm rounded-circle" onClick={() => cart.decrementItem(i.id, i.kind)} aria-label={`Diminuer la quantité de ${i.nom}`}>
                     <i className="bi bi-dash"></i>
                   </button>
                   <span className="font-mono" style={{ minWidth: 24, textAlign: 'center' }}>{i.qty}</span>
-                  <button type="button" className="btn btn-ghost btn-sm rounded-circle" onClick={() => cart.incrementItem(i.id)} aria-label={`Augmenter la quantité de ${i.nom}`}>
+                  <button type="button" className="btn btn-ghost btn-sm rounded-circle" onClick={() => cart.incrementItem(i.id, i.kind)} aria-label={`Augmenter la quantité de ${i.nom}`}>
                     <i className="bi bi-plus"></i>
                   </button>
                 </div>
                 <span className="font-mono" style={{ minWidth: 100, textAlign: 'right' }}>{money(i.prix * i.qty)}</span>
-                <button type="button" className="btn btn-ghost btn-sm" onClick={() => cart.removeItem(i.id)} aria-label={`Retirer ${i.nom} du panier`}>
+                <button type="button" className="btn btn-ghost btn-sm" onClick={() => cart.removeItem(i.id, i.kind)} aria-label={`Retirer ${i.nom} du panier`}>
                   <i className="bi bi-trash"></i>
                 </button>
               </div>
@@ -168,8 +172,8 @@ export default function Cart() {
             </div>
 
             {cart.items.map((i) => (
-              <div key={i.id} className="d-flex justify-content-between border-bottom py-2">
-                <span className="small">{i.nom} × {i.qty}</span>
+              <div key={`${i.kind}-${i.id}`} className="d-flex justify-content-between border-bottom py-2">
+                <span className="small">{i.nom} × {i.qty} {i.unite}</span>
                 <span className="font-mono small">{money(i.prix * i.qty)}</span>
               </div>
             ))}

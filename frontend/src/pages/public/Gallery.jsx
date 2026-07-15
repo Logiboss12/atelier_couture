@@ -3,20 +3,30 @@ import { Link } from 'react-router-dom'
 import TextileTile from '../../components/TextileTile.jsx'
 import { useFetch } from '../../api/useFetch.js'
 import { getProducts } from '../../api/catalog.js'
+import { getTextiles } from '../../api/textiles.js'
 
-const TYPE_LABELS = { vetement: 'Vêtements', mercerie: 'Mercerie' }
+const TYPE_LABELS = { vetement: 'Vêtements', mercerie: 'Mercerie', tissu: 'Tissus' }
 
 export default function Gallery() {
   const [activeType, setActiveType] = useState(null)
   const [activeCategory, setActiveCategory] = useState('Tout')
-  const { data: products, loading } = useFetch(getProducts, [])
+  const { data: products, loading: loadingProducts } = useFetch(getProducts, [])
+  const { data: textiles, loading: loadingTextiles } = useFetch(getTextiles, [])
+  const loading = loadingProducts || loadingTextiles
 
   const published = useMemo(() => (products || []).filter((p) => p.publie !== false), [products])
+  const publishedTextiles = useMemo(() => (textiles || []).filter((t) => t.publie !== false), [textiles])
   const types = useMemo(() => [...new Set(published.map((p) => p.type).filter(Boolean))], [published])
-  const galleryItems = useMemo(
-    () => published.filter((p) => !activeType || p.type === activeType),
-    [published, activeType]
-  )
+  const isTissu = activeType === 'tissu'
+
+  const galleryItems = useMemo(() => {
+    if (isTissu) {
+      return publishedTextiles.map((t) => ({
+        id: `textile-${t.dbId}`, nom: t.nom, categorie: t.origine, image: t.image, tissu: t.id, isTextile: true,
+      }))
+    }
+    return published.filter((p) => !activeType || p.type === activeType)
+  }, [isTissu, publishedTextiles, published, activeType])
 
   const categories = useMemo(
     () => ['Tout', ...new Set(galleryItems.map((g) => g.categorie).filter(Boolean))],
@@ -107,6 +117,14 @@ export default function Gallery() {
               {TYPE_LABELS[t] || t}
             </button>
           ))}
+          {publishedTextiles.length > 0 && (
+            <button
+              type="button" className={`btn btn-sm ${isTissu ? 'btn-iro' : 'btn-ghost'}`}
+              onClick={() => handleTypeChange('tissu')}
+            >
+              Tissus
+            </button>
+          )}
         </div>
 
         <div className="d-flex flex-wrap gap-2 mt-3">
@@ -148,7 +166,7 @@ export default function Gallery() {
                   {item.categorie && (
                     <span className="badge rounded-pill" style={{ background: 'rgba(255,138,61,.16)', color: 'var(--iro-orange)', border: '1px solid rgba(255,138,61,.25)' }}>{item.categorie}</span>
                   )}
-                  <span className="badge rounded-pill" style={{ background: 'rgba(123,92,255,.16)', color: 'var(--iro-text)', border: '1px solid rgba(123,92,255,.25)' }}>Sur-mesure</span>
+                  <span className="badge rounded-pill" style={{ background: 'rgba(123,92,255,.16)', color: 'var(--iro-text)', border: '1px solid rgba(123,92,255,.25)' }}>{item.isTextile ? 'Matière' : 'Sur-mesure'}</span>
                 </div>
               </div>
             </article>

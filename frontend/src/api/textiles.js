@@ -2,12 +2,30 @@ import { apiList, apiCreate, apiUpdate, apiRemove, apiUpload } from './client.js
 
 export async function getTextiles() {
   const rows = await apiList('textiles')
-  return rows.map((t) => ({ id: t.slug, dbId: t.id, nom: t.nom, origine: t.origine, tile: t.tile, image: t.image_url }))
+  return rows.map((t) => ({
+    id: t.slug,
+    dbId: t.id,
+    nom: t.nom,
+    origine: t.origine,
+    tile: t.tile,
+    image: t.image_url,
+    prix: t.prix,
+    publie: t.publie,
+  }))
 }
 
 export async function getTextilesAdmin() {
   const rows = await apiList('textiles')
-  return rows.map((t) => ({ id: t.id, slug: t.slug, nom: t.nom, origine: t.origine, tile: t.tile, image: t.image_url }))
+  return rows.map((t) => ({
+    id: t.id,
+    slug: t.slug,
+    nom: t.nom,
+    origine: t.origine,
+    tile: t.tile,
+    image: t.image_url,
+    prix: t.prix,
+    publie: t.publie,
+  }))
 }
 
 export function createTextile(data) {

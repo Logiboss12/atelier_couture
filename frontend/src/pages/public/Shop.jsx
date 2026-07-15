@@ -5,21 +5,24 @@ import StatusBadge from '../../components/StatusBadge.jsx'
 import { useCart } from '../../context/CartContext.jsx'
 import { useFetch } from '../../api/useFetch.js'
 import { getProducts } from '../../api/catalog.js'
+import { getTextiles } from '../../api/textiles.js'
 
 const stockLabel = { ok: 'En stock', warn: 'Stock bas', danger: 'Rupture' }
 const money = (n) => `${Number(n || 0).toLocaleString('fr-FR')} F`
 
-const TYPE_LABELS = { vetement: 'Vêtements', mercerie: 'Mercerie' }
+const TYPE_LABELS = { vetement: 'Vêtements', mercerie: 'Mercerie', tissu: 'Tissus' }
 
 export default function Shop() {
   const cart = useCart()
   const { data: products, loading } = useFetch(getProducts, [])
+  const { data: textiles, loading: loadingTextiles } = useFetch(getTextiles, [])
   const [type, setType] = useState(null)
   const [categorie, setCategorie] = useState(null)
   const [taille, setTaille] = useState(null)
   const [maxPrix, setMaxPrix] = useState(650000)
 
   const shopProducts = useMemo(() => (products || []).filter((p) => p.publie !== false), [products])
+  const shopTextiles = useMemo(() => (textiles || []).filter((t) => t.publie !== false && t.prix), [textiles])
   const types = useMemo(() => [...new Set(shopProducts.map((p) => p.type).filter(Boolean))], [shopProducts])
   const byType = useMemo(() => shopProducts.filter((p) => !type || p.type === type), [shopProducts, type])
   const categories = useMemo(() => [...new Set(byType.map((p) => p.categorie).filter(Boolean))], [byType])
@@ -35,6 +38,8 @@ export default function Shop() {
     (!taille || (p.tailles || []).includes(taille)) &&
     p.prix <= maxPrix
   ), [byType, categorie, taille, maxPrix])
+
+  const isTissu = type === 'tissu'
 
   return (
     <div className="container">
@@ -64,8 +69,51 @@ export default function Shop() {
             {TYPE_LABELS[t] || t}
           </button>
         ))}
+        {shopTextiles.length > 0 && (
+          <button
+            type="button" className={`btn btn-sm ${isTissu ? 'btn-iro' : 'btn-ghost'}`}
+            onClick={() => handleTypeChange('tissu')}
+          >
+            Tissus
+          </button>
+        )}
       </div>
 
+      {isTissu ? (
+        <div className="row g-3">
+          {loadingTextiles && <p className="text-muted">Chargement des tissus…</p>}
+          {shopTextiles.map((t) => (
+            <div className="col-6 col-lg-3" key={t.dbId}>
+              <div className="glass h-100 overflow-hidden">
+                {t.image ? (
+                  <div className="ratio ratio-1x1">
+                    <img src={t.image} alt={t.nom} style={{ objectFit: 'cover', width: '100%', height: '100%' }} />
+                  </div>
+                ) : (
+                  <TextileTile variant={t.id} className="ratio ratio-1x1 rounded-0"></TextileTile>
+                )}
+                <div className="card-body p-3">
+                  <div className="fw-semibold">{t.nom}</div>
+                  <div className="font-mono text-muted small">{t.origine}</div>
+                  <div className="d-flex align-items-center justify-content-between mt-2">
+                    <span className="font-display">{money(t.prix)} <span className="text-muted small">/ m</span></span>
+                    <button
+                      type="button"
+                      className="btn-iro btn btn-sm"
+                      onClick={() => cart.addItem({ id: t.dbId, nom: t.nom, prix: t.prix, unite: 'm' }, 'textile')}
+                    >
+                      Ajouter
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+          {!loadingTextiles && shopTextiles.length === 0 && (
+            <p className="text-muted">Aucun tissu disponible à la vente pour le moment.</p>
+          )}
+        </div>
+      ) : (
       <div className="row g-4">
         <div className="col-12 col-lg-3">
           <div className="glass p-3 d-none d-lg-block" style={{ position: 'sticky', top: '6.5rem' }}>
@@ -139,6 +187,7 @@ export default function Shop() {
           </div>
         </div>
       </div>
+      )}
     </div>
   )
 }

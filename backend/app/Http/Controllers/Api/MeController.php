@@ -8,6 +8,7 @@ use App\Models\Notification;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\Quote;
+use App\Models\Textile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -79,7 +80,8 @@ class MeController extends Controller
     {
         $data = $request->validate([
             'items' => 'required|array|min:1',
-            'items.*.product_id' => 'required|exists:products,id',
+            'items.*.product_id' => 'required_without:items.*.textile_id|nullable|exists:products,id',
+            'items.*.textile_id' => 'required_without:items.*.product_id|nullable|exists:textiles,id',
             'items.*.quantite' => 'required|integer|min:1',
             'mode_paiement' => 'required|in:carte,mobile_money,especes_livraison',
             'adresse_livraison' => 'required|string|max:255',
@@ -98,17 +100,34 @@ class MeController extends Controller
             $lines = [];
 
             foreach ($data['items'] as $item) {
-                $product = Product::lockForUpdate()->findOrFail($item['product_id']);
+                if (! empty($item['product_id'])) {
+                    $product = Product::lockForUpdate()->findOrFail($item['product_id']);
 
-                if ($product->stock < $item['quantite']) {
-                    abort(422, "Stock insuffisant pour \"{$product->nom}\".");
+                    if ($product->stock < $item['quantite']) {
+                        abort(422, "Stock insuffisant pour \"{$product->nom}\".");
+                    }
+
+                    $montant = $product->prix * $item['quantite'];
+                    $total += $montant;
+                    $lines[] = ['label' => "{$product->nom} x{$item['quantite']}", 'montant' => $montant];
+
+                    $product->decrement('stock', $item['quantite']);
+
+                    continue;
                 }
 
-                $montant = $product->prix * $item['quantite'];
-                $total += $montant;
-                $lines[] = ['label' => "{$product->nom} x{$item['quantite']}", 'montant' => $montant];
+                $textile = Textile::findOrFail($item['textile_id']);
+                $fabricStock = $textile->fabricStock()->lockForUpdate()->first();
 
-                $product->decrement('stock', $item['quantite']);
+                if ($fabricStock && $fabricStock->quantite_metres < $item['quantite']) {
+                    abort(422, "Stock insuffisant pour \"{$textile->nom}\".");
+                }
+
+                $montant = $textile->prix * $item['quantite'];
+                $total += $montant;
+                $lines[] = ['label' => "{$textile->nom} — {$item['quantite']} m", 'montant' => $montant];
+
+                $fabricStock?->decrement('quantite_metres', $item['quantite']);
             }
 
             $invoice = Invoice::create([

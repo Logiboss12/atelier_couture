@@ -21,6 +21,8 @@ class TextileController extends Controller
             'nom' => 'required|string',
             'origine' => 'nullable|string',
             'tile' => 'nullable|string',
+            'prix' => 'nullable|integer|min:0',
+            'publie' => 'nullable|boolean',
         ]);
 
         return Textile::create($data);
@@ -38,6 +40,8 @@ class TextileController extends Controller
             'nom' => 'sometimes|required|string',
             'origine' => 'nullable|string',
             'tile' => 'nullable|string',
+            'prix' => 'nullable|integer|min:0',
+            'publie' => 'nullable|boolean',
         ]);
 
         $textile->update($data);
