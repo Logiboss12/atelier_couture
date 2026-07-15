@@ -56,10 +56,10 @@ class TextileController extends Controller
         ]);
 
         if ($textile->image) {
-            Storage::disk('public')->delete($textile->image);
+            Storage::delete($textile->image);
         }
 
-        $path = $request->file('image')->store('textiles', 'public');
+        $path = $request->file('image')->store('textiles');
         $textile->update(['image' => $path]);
 
         return $textile;
@@ -68,7 +68,7 @@ class TextileController extends Controller
     public function destroy(Textile $textile)
     {
         if ($textile->image) {
-            Storage::disk('public')->delete($textile->image);
+            Storage::delete($textile->image);
         }
 
         $textile->delete();

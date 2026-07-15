@@ -84,10 +84,10 @@ class ProductController extends Controller
         ]);
 
         if ($product->image) {
-            Storage::disk('public')->delete($product->image);
+            Storage::delete($product->image);
         }
 
-        $path = $request->file('image')->store('products', 'public');
+        $path = $request->file('image')->store('products');
         $product->update(['image' => $path]);
 
         return $product;
@@ -96,7 +96,7 @@ class ProductController extends Controller
     public function destroy(Product $product)
     {
         if ($product->image) {
-            Storage::disk('public')->delete($product->image);
+            Storage::delete($product->image);
         }
 
         $product->delete();

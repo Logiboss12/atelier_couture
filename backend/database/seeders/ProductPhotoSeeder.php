@@ -40,7 +40,7 @@ class ProductPhotoSeeder extends Seeder
             $extension = pathinfo($filename, PATHINFO_EXTENSION);
             $targetPath = 'products/'.uniqid('seed_').'.'.$extension;
 
-            Storage::disk('public')->put($targetPath, file_get_contents($sourceFile));
+            Storage::put($targetPath, file_get_contents($sourceFile));
             $product->update(['image' => $targetPath]);
         }
     }
