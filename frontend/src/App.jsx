@@ -5,6 +5,7 @@ import PublicLayout from './components/PublicLayout.jsx'
 import AdminLayout from './components/AdminLayout.jsx'
 import RequireAuth from './components/RequireAuth.jsx'
 import RequireAdmin from './components/RequireAdmin.jsx'
+import OfflineBanner from './components/OfflineBanner.jsx'
 
 import Home from './pages/public/Home.jsx'
 import Gallery from './pages/public/Gallery.jsx'
@@ -37,6 +38,7 @@ export default function App() {
     <AuthProvider>
       <CartProvider>
         <BrowserRouter>
+          <OfflineBanner />
           <Routes>
             <Route element={<PublicLayout />}>
               <Route path="/" element={<Home />} />

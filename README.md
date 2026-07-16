@@ -18,7 +18,7 @@ frontend/   # SPA React (vitrine + back-office)
 - [Bootstrap 5](https://getbootstrap.com/) + [Bootstrap Icons](https://icons.getbootstrap.com/) pour l'UI
 - [Recharts](https://recharts.org/) pour les graphiques du back-office
 - [Oxlint](https://oxc.rs/) pour le lint
-- [vite-plugin-pwa](https://vite-pwa-org.netlify.app/) pour le support PWA
+- [vite-plugin-pwa](https://vite-pwa-org.netlify.app/) pour le support PWA — hors-ligne : lecture (cache `NetworkFirst` sur les GET `/api/*`) + écriture en file d'attente (Workbox Background Sync sur la création de commande, la prise de mesures et l'avancement Kanban), rejouée automatiquement au retour du réseau
 
 **Backend**
 - [Laravel 12](https://laravel.com/) (PHP 8.5)

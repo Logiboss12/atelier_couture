@@ -282,6 +282,7 @@ function SurMesureForm({ measurements: existingMeasurements = [], onCreated }) {
   const [instructions, setInstructions] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState(null)
+  const [queuedOffline, setQueuedOffline] = useState(false)
 
   const { data: textiles } = useFetch(getTextiles, [])
   const { data: products } = useFetch(getProducts, [])
@@ -299,6 +300,7 @@ function SurMesureForm({ measurements: existingMeasurements = [], onCreated }) {
   const handleSubmit = async () => {
     setSubmitting(true)
     setError(null)
+    setQueuedOffline(false)
     try {
       const order = await createSurMesureOrder({
         modele: styleName || 'Pièce sur-mesure',
@@ -308,12 +310,16 @@ function SurMesureForm({ measurements: existingMeasurements = [], onCreated }) {
       })
 
       for (const file of stylePhotoFiles) {
-        await uploadMyOrderPhoto(order.id, file)
+        await uploadMyOrderPhoto(order.id, file).catch(() => {})
       }
 
       onCreated()
     } catch (err) {
-      setError(err.message)
+      if (!navigator.onLine) {
+        setQueuedOffline(true)
+      } else {
+        setError(err.message)
+      }
     } finally {
       setSubmitting(false)
     }
@@ -476,6 +482,12 @@ function SurMesureForm({ measurements: existingMeasurements = [], onCreated }) {
         {error && (
           <div className="status danger p-3 mb-3">
             <i className="bi bi-exclamation-circle me-2"></i>{error}
+          </div>
+        )}
+        {queuedOffline && (
+          <div className="status warn p-3 mb-3">
+            <i className="bi bi-wifi-off me-2"></i>
+            Vous êtes hors-ligne. Votre demande a été enregistrée sur cet appareil et sera envoyée automatiquement dès le retour du réseau.
           </div>
         )}
         <button type="button" className="btn-iro btn btn-lg" onClick={handleSubmit} disabled={submitting || !hasStyle}>

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import TextileTile from '../../components/TextileTile.jsx'
 import { useFetch } from '../../api/useFetch.js'
 import {
@@ -205,10 +205,16 @@ function OrderCard({ order, onDragStart, onChanged }) {
 
 export default function Orders() {
   const [refreshKey, setRefreshKey] = useState(0)
-  const { data: orders, loading } = useFetch(getOrders, [refreshKey])
+  const { data: fetchedOrders, loading } = useFetch(getOrders, [refreshKey])
   const { data: workflowSteps, loading: loadingSteps } = useFetch(getWorkflowSteps, [])
+  const [orders, setOrders] = useState(null)
   const [dragOverColumn, setDragOverColumn] = useState(null)
   const [moving, setMoving] = useState(false)
+  const [offlineNotice, setOfflineNotice] = useState(false)
+
+  useEffect(() => {
+    if (fetchedOrders) setOrders(fetchedOrders)
+  }, [fetchedOrders])
 
   const handleDragStart = (e, orderId) => {
     e.dataTransfer.setData('text/plain', String(orderId))
@@ -220,10 +226,20 @@ export default function Orders() {
     const orderId = e.dataTransfer.getData('text/plain')
     if (!orderId) return
 
+    const previousOrders = orders
+    setOrders((prev) => prev.map((o) => (String(o.id) === orderId ? { ...o, statut: statusId } : o)))
+    setOfflineNotice(false)
+
     setMoving(true)
     try {
       await updateOrderStatus(orderId, statusId)
-      setRefreshKey((k) => k + 1)
+      if (navigator.onLine) setRefreshKey((k) => k + 1)
+    } catch {
+      if (navigator.onLine) {
+        setOrders(previousOrders)
+      } else {
+        setOfflineNotice(true)
+      }
     } finally {
       setMoving(false)
     }
@@ -236,6 +252,11 @@ export default function Orders() {
       <div className="d-flex justify-content-between align-items-center mb-3">
         <p className="text-muted mb-0 d-none d-sm-block">Glissez les commandes d'une étape à l'autre. Le workflow se personnalise dans Paramètres.</p>
         {moving && <span className="text-muted small">Mise à jour…</span>}
+        {offlineNotice && (
+          <span className="text-muted small">
+            <i className="bi bi-wifi-off me-1"></i>Hors-ligne — sera synchronisé au retour du réseau
+          </span>
+        )}
       </div>
 
       <div className="d-flex gap-3 overflow-auto pb-2">
