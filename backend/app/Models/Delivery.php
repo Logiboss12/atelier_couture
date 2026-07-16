@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Delivery extends Model
 {
     protected $fillable = [
-        'order_id', 'client_id', 'client_label', 'date', 'heure', 'zone', 'contenu', 'type', 'statut',
+        'order_id', 'client_id', 'client_label', 'date', 'heure', 'zone', 'contenu', 'type', 'statut', 'delivery_group_id',
     ];
 
     protected $casts = [
@@ -23,5 +23,10 @@ class Delivery extends Model
     public function client(): BelongsTo
     {
         return $this->belongsTo(Client::class);
+    }
+
+    public function deliveryGroup(): BelongsTo
+    {
+        return $this->belongsTo(DeliveryGroup::class);
     }
 }

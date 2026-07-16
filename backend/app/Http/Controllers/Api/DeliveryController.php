@@ -10,7 +10,7 @@ class DeliveryController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Delivery::with('order', 'client');
+        $query = Delivery::with('order', 'client', 'deliveryGroup');
 
         if ($request->filled('date')) {
             $query->whereDate('date', $request->string('date'));

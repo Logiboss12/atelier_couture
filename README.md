@@ -141,6 +141,8 @@ L'API n'utilise pas Laravel Sanctum : l'authentification repose sur un système 
 
 **Carnet de mesures** : historisé et réutilisable — chaque prise de mesures (`measurements`) est datée et rattachée à un type de vêtement, gérable depuis la fiche client (admin/employé) ou directement lors de la création d'une pièce sur-mesure (client). Une commande référence le profil de mesures exact utilisé (`orders.measurement_id`), visible sur sa carte Kanban.
 
+**Marge par commande** : `/admin/finances` affiche, pour chaque commande chiffrée, une marge **estimée** = prix du devis − matières premières facturées (`quotes.montant - quotes.montant_matieres`), triée par marge décroissante, avec la marge moyenne en tête. C'est une estimation (la main d'œuvre et les frais généraux ne sont pas déduits, faute de coût horaire suivi côté équipe) — libellée comme telle dans l'UI plutôt que présentée comme un vrai résultat comptable.
+
 ## Données
 
 L'essentiel des données (clients, commandes, devis, factures, produits, collections, textiles, stocks, promotions, équipe, finances, notifications) provient de l'API Laravel / MySQL — la Boutique, la Galerie et la page d'Accueil affichent toutes le vrai catalogue publié par l'admin (photos comprises), plus aucune de ces données n'est simulée côté frontend.

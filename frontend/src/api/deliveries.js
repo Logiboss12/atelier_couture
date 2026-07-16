@@ -20,6 +20,7 @@ export async function getDeliveries() {
     client: d.client?.nom ?? d.client_label,
     zone: d.zone,
     contenu: d.contenu,
+    deliveryGroupId: d.delivery_group_id ?? null,
     type: TYPE_BADGE[d.type] ?? 'info',
     typeLabel: TYPE_LABEL[d.type] ?? d.type,
     statut: STATUT_BADGE[d.statut] ?? 'neutral',

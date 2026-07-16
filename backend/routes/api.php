@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CashMovementController;
 use App\Http\Controllers\Api\ClientController;
 use App\Http\Controllers\Api\DeliveryController;
+use App\Http\Controllers\Api\DeliveryGroupController;
 use App\Http\Controllers\Api\EventController;
 use App\Http\Controllers\Api\FabricStockController;
 use App\Http\Controllers\Api\FinanceController;
@@ -65,6 +66,9 @@ Route::middleware(['auth.token', 'staff'])->group(function () {
     Route::delete('orders/{order}/photos', [OrderController::class, 'removePhoto']);
     Route::apiResource('quotes', QuoteController::class);
     Route::apiResource('deliveries', DeliveryController::class);
+    Route::apiResource('delivery-groups', DeliveryGroupController::class);
+    Route::post('delivery-groups/{deliveryGroup}/deliveries/{delivery}', [DeliveryGroupController::class, 'addDelivery']);
+    Route::delete('delivery-groups/{deliveryGroup}/deliveries/{delivery}', [DeliveryGroupController::class, 'removeDelivery']);
     Route::get('settings/whatsapp-template', [SettingController::class, 'whatsappTemplate']);
 });
 
