@@ -1,7 +1,11 @@
-import { apiList, apiCreate } from './client.js'
+import { apiList, apiCreate, apiRemove } from './client.js'
 
 export function createQuote(data) {
   return apiCreate('quotes', data)
+}
+
+export function removeQuote(id) {
+  return apiRemove('quotes', id)
 }
 
 export async function getQuotes() {
@@ -14,19 +18,8 @@ export async function getQuotes() {
       client: q.client?.nom ?? '',
       modele: q.modele,
       montant: q.montant,
+      montantMatieres: q.montant_matieres,
+      montantMainOeuvre: q.montant_main_oeuvre,
+      echeance: (q.echeance || '').slice(0, 10),
     }))
-}
-
-export async function getInvoicePreview() {
-  const rows = await apiList('invoices')
-  const invoice = rows[0]
-  if (!invoice) return null
-
-  return {
-    numero: invoice.numero,
-    client: invoice.client?.nom ?? '',
-    date: (invoice.date || '').slice(0, 10),
-    lignes: (invoice.lines || []).map((l) => ({ label: l.label, montant: l.montant })),
-    total: invoice.total,
-  }
 }

@@ -27,6 +27,13 @@ class FinanceController extends Controller
         $entrees = $currentMonth->where('type', 'in')->sum('montant');
         $sorties = $currentMonth->where('type', 'out')->sum('montant');
 
+        $currentWeek = $movements->filter(
+            fn ($m) => Carbon::parse($m->date)->isSameWeek(now())
+        );
+
+        $entreesSemaine = $currentWeek->where('type', 'in')->sum('montant');
+        $sortiesSemaine = $currentWeek->where('type', 'out')->sum('montant');
+
         $paymentMethods = $movements->where('type', 'in')->groupBy('moyen_paiement')
             ->map(fn ($group, $moyen) => [
                 'moyen_paiement' => $moyen,
@@ -61,6 +68,18 @@ class FinanceController extends Controller
             return [
                 'mois' => $mois,
                 'ca' => $revenueGroupedByMonth->get($mois, collect())->sum('montant'),
+            ];
+        });
+
+        $revenueGroupedByWeek = $movements->where('type', 'in')
+            ->groupBy(fn ($m) => Carbon::parse($m->date)->startOfWeek()->format('Y-m-d'));
+
+        $revenueByWeek = collect(range(7, 0))->map(function ($weeksAgo) use ($revenueGroupedByWeek) {
+            $semaine = now()->subWeeks($weeksAgo)->startOfWeek()->format('Y-m-d');
+
+            return [
+                'semaine' => $semaine,
+                'ca' => $revenueGroupedByWeek->get($semaine, collect())->sum('montant'),
             ];
         });
 
@@ -99,11 +118,15 @@ class FinanceController extends Controller
             'entrees_mois' => $entrees,
             'sorties_mois' => $sorties,
             'benefice_net' => $entrees - $sorties,
+            'entrees_semaine' => $entreesSemaine,
+            'sorties_semaine' => $sortiesSemaine,
+            'benefice_net_semaine' => $entreesSemaine - $sortiesSemaine,
             'impayes' => $impayes,
             'impayes_count' => $impayesCount,
             'payment_methods' => $paymentMethods,
             'expense_categories' => $expenseCategories,
             'revenue_by_month' => $revenueByMonth,
+            'revenue_by_week' => $revenueByWeek,
             'order_profitability' => $orderProfitability,
             'marge_moyenne_pct' => $margeMoyennePct,
         ]);

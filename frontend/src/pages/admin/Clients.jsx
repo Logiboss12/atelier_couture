@@ -2,26 +2,36 @@ import { useState } from 'react'
 import StatusBadge from '../../components/StatusBadge.jsx'
 import TextileTile from '../../components/TextileTile.jsx'
 import { useFetch } from '../../api/useFetch.js'
-import { getClients } from '../../api/clients.js'
+import { getClients, createClient } from '../../api/clients.js'
 import { getOrders } from '../../api/orders.js'
 import { createMeasurement, deleteMeasurement } from '../../api/measurements.js'
 import { measurementFields } from '../../mock/customOrder.js'
+
+const VISIBLE_CLIENTS = 7
 
 export default function Clients() {
   const [search, setSearch] = useState('')
   const [selectedId, setSelectedId] = useState(null)
   const [refreshKey, setRefreshKey] = useState(0)
   const [showMeasurementForm, setShowMeasurementForm] = useState(false)
+  const [showClientForm, setShowClientForm] = useState(false)
 
   const { data: clients, loading: loadingClients } = useFetch(getClients, [refreshKey])
   const { data: orders } = useFetch(getOrders, [])
 
   if (loadingClients || !clients) return <p className="text-muted">Chargement…</p>
-  if (clients.length === 0) return <p className="text-muted">Aucun client enregistré.</p>
 
   const filtered = clients.filter((c) => c.nom.toLowerCase().includes(search.toLowerCase()))
+  const visibleClients = filtered.slice(0, VISIBLE_CLIENTS)
   const selected = clients.find((c) => c.id === selectedId) || clients[0]
-  const history = (orders || []).filter((o) => o.client === selected.nom)
+  const history = selected ? (orders || []).filter((o) => o.client === selected.nom) : []
+
+  const handleClientCreated = (client) => {
+    setShowClientForm(false)
+    setSearch(client.nom)
+    setSelectedId(client.id)
+    setRefreshKey((k) => k + 1)
+  }
 
   return (
     <div className="row g-3">
@@ -31,8 +41,11 @@ export default function Clients() {
             <span className="input-group-text bg-transparent border-0" style={{ color: 'var(--iro-faint)' }}><i className="bi bi-search"></i></span>
             <input type="search" className="form-control border-0 bg-transparent" placeholder="Rechercher un client…" value={search} onChange={(e) => setSearch(e.target.value)} />
           </div>
-          <div className="d-flex flex-column gap-1" style={{ maxHeight: 'calc(100vh - 220px)', overflowY: 'auto' }}>
-            {filtered.map((c) => (
+          <div className="d-flex flex-column gap-1" style={{ maxHeight: 'calc(100vh - 320px)', overflowY: 'auto' }}>
+            {visibleClients.length === 0 && (
+              <p className="text-muted small p-2 mb-0">Aucun client trouvé.</p>
+            )}
+            {visibleClients.map((c) => (
               <button
                 key={c.id}
                 type="button"
@@ -48,10 +61,30 @@ export default function Clients() {
               </button>
             ))}
           </div>
+          {filtered.length > VISIBLE_CLIENTS && (
+            <p className="text-muted small px-2 mb-0 mt-1">
+              {filtered.length - VISIBLE_CLIENTS} autre(s) client(s) — affinez la recherche pour les trouver.
+            </p>
+          )}
+
+          <div className="border-top mt-2 pt-2" style={{ borderColor: 'var(--iro-border)' }}>
+            {showClientForm ? (
+              <ClientForm onCreated={handleClientCreated} onCancel={() => setShowClientForm(false)} />
+            ) : (
+              <button type="button" className="btn-iro btn btn-sm w-100" onClick={() => setShowClientForm(true)}>
+                <i className="bi bi-person-plus me-1"></i>Ajouter un client
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
       <div className="col-12 col-lg-8">
+        {!selected ? (
+          <div className="glass p-4 text-center">
+            <p className="text-muted mb-0">Aucun client enregistré. Ajoutez-en un pour commencer.</p>
+          </div>
+        ) : (
         <div className="glass p-4">
           <div className="d-flex align-items-center gap-3 border-bottom pb-3 mb-3" style={{ borderColor: 'var(--iro-border)' }}>
             <span className="rounded-circle flex-shrink-0" style={{ width: 64, height: 64, background: 'var(--iro-grad)' }}></span>
@@ -137,8 +170,69 @@ export default function Clients() {
             </div>
           ))}
         </div>
+        )}
       </div>
     </div>
+  )
+}
+
+function ClientForm({ onCreated, onCancel }) {
+  const [nom, setNom] = useState('')
+  const [email, setEmail] = useState('')
+  const [tel, setTel] = useState('')
+  const [ville, setVille] = useState('')
+  const [pays, setPays] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState(null)
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setSaving(true)
+    setError(null)
+    try {
+      const client = await createClient({ nom, email, tel: tel || null, ville: ville || null, pays: pays || null })
+      onCreated(client)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <input
+        type="text" className="form-control form-control-sm mb-2" placeholder="Nom complet"
+        value={nom} onChange={(e) => setNom(e.target.value)} required
+      />
+      <input
+        type="email" className="form-control form-control-sm mb-2" placeholder="Email"
+        value={email} onChange={(e) => setEmail(e.target.value)} required
+      />
+      <input
+        type="text" className="form-control form-control-sm mb-2" placeholder="Téléphone"
+        value={tel} onChange={(e) => setTel(e.target.value)}
+      />
+      <div className="row row-cols-2 g-2 mb-2">
+        <div className="col">
+          <input
+            type="text" className="form-control form-control-sm" placeholder="Ville"
+            value={ville} onChange={(e) => setVille(e.target.value)}
+          />
+        </div>
+        <div className="col">
+          <input
+            type="text" className="form-control form-control-sm" placeholder="Pays"
+            value={pays} onChange={(e) => setPays(e.target.value)}
+          />
+        </div>
+      </div>
+      {error && <div className="status danger p-2 mb-2 small">{error}</div>}
+      <div className="d-flex gap-2">
+        <button type="button" className="btn-ghost btn btn-sm" onClick={onCancel}>Annuler</button>
+        <button type="submit" className="btn-iro btn btn-sm flex-grow-1" disabled={saving}>{saving ? '…' : 'Enregistrer'}</button>
+      </div>
+    </form>
   )
 }
 

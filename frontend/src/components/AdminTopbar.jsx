@@ -46,9 +46,6 @@ export default function AdminTopbar() {
           <i className="bi bi-bell"></i>
           <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill" style={{ background: 'var(--iro-red)' }}>4</span>
         </button>
-        <button type="button" className="btn-iro btn btn-sm d-none d-sm-inline-flex" onClick={() => navigate('/admin/commandes')}>
-          <i className="bi bi-plus-lg me-1"></i> Nouvelle commande
-        </button>
         <span className="text-muted small d-none d-md-inline">{user?.name}</span>
         <button type="button" className="btn btn-ghost btn-sm rounded-circle" aria-label="Déconnexion" onClick={handleLogout}>
           <i className="bi bi-box-arrow-right"></i>

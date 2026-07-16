@@ -1,4 +1,8 @@
-import { apiList } from './client.js'
+import { apiList, apiCreate } from './client.js'
+
+export function createClient(data) {
+  return apiCreate('clients', data)
+}
 
 export async function getClients() {
   const rows = await apiList('clients')

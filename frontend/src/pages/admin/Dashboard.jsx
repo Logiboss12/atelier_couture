@@ -33,22 +33,24 @@ export default function Dashboard() {
     .sort((a, b) => a.heures - b.heures)
 
   const echeances48h = dueSoonOrders.length
+  const dueSoonDisplay = dueSoonOrders.slice(0, 5)
+  const recentAlerts = (relanceAlerts || []).slice(0, 5)
 
-  const rentabilite = summary?.entrees_mois > 0
-    ? Math.round((summary.benefice_net / summary.entrees_mois) * 100)
+  const rentabilite = summary?.entrees_semaine > 0
+    ? Math.round((summary.benefice_net_semaine / summary.entrees_semaine) * 100)
     : 0
 
-  const revenueByMonth = (summary?.revenue_by_month ?? []).map((r) => ({
-    mois: MOIS_COURTS[Number(r.mois.split('-')[1]) - 1],
-    ca: r.ca,
-  }))
+  const revenueByWeek = (summary?.revenue_by_week ?? []).map((r) => {
+    const d = new Date(r.semaine)
+    return { semaine: `${String(d.getDate()).padStart(2, '0')}/${MOIS_COURTS[d.getMonth()]}`, ca: r.ca }
+  })
 
   return (
     <div>
       <div className="row row-cols-2 row-cols-xl-5 g-3 mb-3">
         <div className="col"><KpiCard icon="bi-scissors" label="Commandes du jour" value={String(commandesDuJour)} color="var(--iro-text)" /></div>
         <div className="col"><KpiCard icon="bi-alarm" label="Échéances 48h" value={String(echeances48h)} delta={echeances48h > 0 ? 'urgent' : ''} color="var(--iro-orange)" /></div>
-        <div className="col"><KpiCard icon="bi-cash-coin" label="Solde de caisse" value={formatF(summary?.solde)} color="var(--iro-green)" /></div>
+        <div className="col"><KpiCard icon="bi-cash-coin" label="Solde de caisse (semaine)" value={formatF(summary?.benefice_net_semaine)} color="var(--iro-green)" /></div>
         <div className="col"><KpiCard icon="bi-exclamation-circle" label="Impayés" value={formatF(summary?.impayes)} delta={summary ? `${summary.impayes_count} facture(s)` : ''} color="var(--iro-red)" /></div>
         <div className="col"><KpiCard icon="bi-graph-up-arrow" label="Rentabilité" value={`${rentabilite}%`} color="var(--iro-violet)" /></div>
       </div>
@@ -56,11 +58,11 @@ export default function Dashboard() {
       <div className="row g-3 mb-3">
         <div className="col-12 col-lg-8">
           <div className="glass p-3 h-100">
-            <div className="eyebrow mb-3">Chiffre d'affaires — 6 derniers mois</div>
+            <div className="eyebrow mb-3">Chiffre d'affaires — 8 dernières semaines</div>
             <ResponsiveContainer width="100%" height={260}>
-              <BarChart data={revenueByMonth}>
+              <BarChart data={revenueByWeek}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,.08)" vertical={false} />
-                <XAxis dataKey="mois" stroke="rgba(244,240,234,.5)" tickLine={false} axisLine={false} />
+                <XAxis dataKey="semaine" stroke="rgba(244,240,234,.5)" tickLine={false} axisLine={false} />
                 <Tooltip
                   contentStyle={{ background: '#1c1636', border: '1px solid rgba(255,255,255,.09)', borderRadius: 12, color: '#f4f0ea' }}
                   formatter={(v) => `${v.toLocaleString('fr-FR')} F`}
@@ -78,12 +80,15 @@ export default function Dashboard() {
         </div>
         <div className="col-12 col-lg-4">
           <div className="glass p-3 h-100">
-            <div className="eyebrow mb-3">Alertes de relance</div>
+            <div className="d-flex justify-content-between align-items-center mb-3">
+              <div className="eyebrow mb-0">Alertes de relance</div>
+              <Link to="/admin/devis" className="small">Voir tout</Link>
+            </div>
             <div className="d-flex flex-column">
-              {(relanceAlerts || []).length === 0 && (
+              {recentAlerts.length === 0 && (
                 <p className="text-muted small mb-0">Aucune relance en attente.</p>
               )}
-              {(relanceAlerts || []).map((a) => (
+              {recentAlerts.map((a) => (
                 <div key={a.id} className="d-flex align-items-center gap-3 border-bottom py-2" style={{ borderColor: 'var(--iro-border)' }}>
                   <span className="rounded-circle flex-shrink-0" style={{ width: 10, height: 10, background: a.color }}></span>
                   <div className="flex-grow-1">
@@ -131,11 +136,14 @@ export default function Dashboard() {
         </div>
         <div className="col-12 col-lg-6">
           <div className="glass p-3 h-100">
-            <div className="eyebrow mb-3">Échéances 24/48h</div>
+            <div className="d-flex justify-content-between align-items-center mb-3">
+              <div className="eyebrow mb-0">Échéances 24/48h</div>
+              <Link to="/admin/commandes" className="small">Voir tout</Link>
+            </div>
             {dueSoonOrders.length === 0 && (
               <p className="text-muted small mb-0">Aucune échéance dans les 48 prochaines heures.</p>
             )}
-            {dueSoonOrders.map((d) => (
+            {dueSoonDisplay.map((d) => (
               <div key={d.id} className="d-flex align-items-center gap-3 border-bottom py-2" style={{ borderColor: 'var(--iro-border)' }}>
                 <span className="font-mono fw-bold" style={{ color: d.heures <= 12 ? 'var(--iro-red)' : d.heures <= 24 ? 'var(--iro-orange)' : 'var(--iro-blue)', minWidth: 46 }}>
                   {d.heures}h
