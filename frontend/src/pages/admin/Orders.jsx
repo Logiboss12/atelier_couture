@@ -5,7 +5,10 @@ import {
   getOrders, updateOrderStatus, updateOrderInstructions, uploadOrderPhoto, removeOrderPhoto,
 } from '../../api/orders.js'
 import { getWorkflowSteps } from '../../api/orderStatuses.js'
+import { getWhatsAppTemplate } from '../../api/settings.js'
 import { createQuote } from '../../api/quotes.js'
+
+const DEFAULT_WHATSAPP_TEMPLATE = 'Bonjour {client}, votre commande {ref} ({modele}) est passée à « {statut} ». — Maison Ìró'
 
 function urgencyColor(dateStr) {
   const days = (new Date(dateStr) - new Date()) / 86400000
@@ -15,6 +18,16 @@ function urgencyColor(dateStr) {
 }
 
 const money = (n) => `${Number(n || 0).toLocaleString('fr-FR')} F`
+
+function buildWhatsAppLink(order, statusLabel, template) {
+  if (!order.clientTel) return null
+  const message = template
+    .replace(/\{client\}/g, order.client)
+    .replace(/\{ref\}/g, order.ref)
+    .replace(/\{modele\}/g, order.modele)
+    .replace(/\{statut\}/g, statusLabel || order.statut)
+  return `https://wa.me/${order.clientTel.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`
+}
 
 function OrderDetails({ order, onChanged }) {
   const [instructions, setInstructions] = useState(order.instructions)
@@ -102,7 +115,7 @@ function OrderDetails({ order, onChanged }) {
   )
 }
 
-function OrderCard({ order, onDragStart, onChanged }) {
+function OrderCard({ order, onDragStart, onChanged, statusLabel, whatsappTemplate }) {
   const [showQuoteForm, setShowQuoteForm] = useState(false)
   const [showDetails, setShowDetails] = useState(false)
   const [montantMatieres, setMontantMatieres] = useState('')
@@ -112,6 +125,7 @@ function OrderCard({ order, onDragStart, onChanged }) {
   const [sent, setSent] = useState(false)
 
   const total = (Number(montantMatieres) || 0) + (Number(montantMainOeuvre) || 0)
+  const waHref = buildWhatsAppLink(order, statusLabel, whatsappTemplate || DEFAULT_WHATSAPP_TEMPLATE)
 
   const handleSendQuote = async () => {
     setSending(true)
@@ -143,10 +157,20 @@ function OrderCard({ order, onDragStart, onChanged }) {
     >
       <div className="d-flex align-items-center gap-2 mb-2">
         <TextileTile variant={order.tissu} style={{ width: 34, height: 34, flexShrink: 0 }} />
-        <div>
+        <div className="flex-grow-1">
           <div className="small fw-semibold">{order.client}</div>
           <div className="font-mono text-muted" style={{ fontSize: '.68rem' }}>{order.ref}</div>
         </div>
+        {waHref && (
+          <a
+            href={waHref} target="_blank" rel="noreferrer"
+            className="btn-ghost btn btn-sm p-1" style={{ lineHeight: 1 }}
+            title="Prévenir le client par WhatsApp"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <i className="bi bi-whatsapp"></i>
+          </a>
+        )}
       </div>
       <div className="small mb-2">{order.modele}</div>
       <div className="d-flex justify-content-between align-items-center mb-2">
@@ -207,6 +231,7 @@ export default function Orders() {
   const [refreshKey, setRefreshKey] = useState(0)
   const { data: fetchedOrders, loading } = useFetch(getOrders, [refreshKey])
   const { data: workflowSteps, loading: loadingSteps } = useFetch(getWorkflowSteps, [])
+  const { data: whatsappSettings } = useFetch(getWhatsAppTemplate, [])
   const [orders, setOrders] = useState(null)
   const [dragOverColumn, setDragOverColumn] = useState(null)
   const [moving, setMoving] = useState(false)
@@ -278,7 +303,10 @@ export default function Orders() {
               </div>
               <div className="d-flex flex-column gap-2 overflow-auto">
                 {items.map((o) => (
-                  <OrderCard key={o.id} order={o} onDragStart={handleDragStart} onChanged={() => setRefreshKey((k) => k + 1)} />
+                  <OrderCard
+                    key={o.id} order={o} onDragStart={handleDragStart} onChanged={() => setRefreshKey((k) => k + 1)}
+                    statusLabel={status.label} whatsappTemplate={whatsappSettings?.whatsapp_template_status}
+                  />
                 ))}
                 {items.length === 0 && <p className="text-muted small mb-0">Aucune commande.</p>}
               </div>

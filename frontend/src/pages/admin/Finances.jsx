@@ -1,17 +1,22 @@
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts'
 import { useFetch } from '../../api/useFetch.js'
-import { getFinanceKpis, getPaymentMethods, getExpenseCategories, getCashMovements } from '../../api/finances.js'
+import { getFinanceKpis, getPaymentMethods, getExpenseCategories, getCashMovements, getOrderProfitability } from '../../api/finances.js'
+
+const money = (n) => `${Number(n || 0).toLocaleString('fr-FR')} F`
 
 export default function Finances() {
   const { data: financeKpis, loading: loadingKpis } = useFetch(getFinanceKpis, [])
   const { data: paymentMethods, loading: loadingPayment } = useFetch(getPaymentMethods, [])
   const { data: expenseCategories, loading: loadingExpense } = useFetch(getExpenseCategories, [])
   const { data: cashMovements, loading: loadingCash } = useFetch(getCashMovements, [])
+  const { data: profitability, loading: loadingProfitability } = useFetch(getOrderProfitability, [])
 
-  if (loadingKpis || loadingPayment || loadingExpense || loadingCash
-    || !financeKpis || !paymentMethods || !expenseCategories || !cashMovements) {
+  if (loadingKpis || loadingPayment || loadingExpense || loadingCash || loadingProfitability
+    || !financeKpis || !paymentMethods || !expenseCategories || !cashMovements || !profitability) {
     return <p className="text-muted">Chargement…</p>
   }
+
+  const topOrders = [...profitability.orders].sort((a, b) => b.marge - a.marge)
 
   const totalDepenses = cashMovements.filter((m) => m.type === 'out').reduce((sum, m) => sum + m.montant, 0)
 
@@ -75,6 +80,31 @@ export default function Finances() {
             </div>
           </div>
         </div>
+      </div>
+
+      <div className="glass p-3 mb-3">
+        <div className="d-flex align-items-center justify-content-between mb-1">
+          <div className="eyebrow mb-0">Marge par commande</div>
+          {profitability.margeMoyennePct != null && (
+            <span className="font-mono small text-muted">Marge moyenne : {profitability.margeMoyennePct}%</span>
+          )}
+        </div>
+        <p className="text-muted small mb-3">Marge estimée = prix du devis − matières premières facturées (hors main d'œuvre et frais généraux).</p>
+        {topOrders.length === 0 && <p className="text-muted small mb-0">Aucune commande chiffrée pour le moment.</p>}
+        {topOrders.map((o) => (
+          <div key={o.orderId} className="d-flex align-items-center gap-3 border-bottom py-2" style={{ borderColor: 'var(--iro-border)' }}>
+            <div className="flex-grow-1">
+              <div className="small fw-semibold">{o.modele}</div>
+              <div className="text-muted font-mono" style={{ fontSize: '.7rem' }}>
+                {o.ref} · {money(o.montant)} − {money(o.montantMatieres)} matières
+                {o.payee && <span className="ms-1" style={{ color: 'var(--iro-green)' }}>· payée</span>}
+              </div>
+            </div>
+            <span className="font-mono fw-semibold" style={{ color: o.marge >= 0 ? 'var(--iro-green)' : 'var(--iro-red)' }}>
+              {money(o.marge)} {o.margePct != null && `(${o.margePct}%)`}
+            </span>
+          </div>
+        ))}
       </div>
 
       <div className="glass p-3">

@@ -193,6 +193,55 @@ function PaymentSettings() {
   )
 }
 
+const DEFAULT_WHATSAPP_TEMPLATE = 'Bonjour {client}, votre commande {ref} ({modele}) est passée à « {statut} ». — Maison Ìró'
+
+function WhatsAppSettings() {
+  const { data: settings, loading } = useFetch(getSettings, [])
+  const [template, setTemplate] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+
+  useEffect(() => {
+    if (settings) {
+      setTemplate(settings.whatsapp_template_status || DEFAULT_WHATSAPP_TEMPLATE)
+    }
+  }, [settings])
+
+  const handleSave = async (e) => {
+    e.preventDefault()
+    setSaving(true)
+    setSaved(false)
+    try {
+      await updateSettings({ whatsapp_template_status: template })
+      setSaved(true)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="glass p-4">
+      <div className="eyebrow mb-3">Modèle de message WhatsApp</div>
+      <p className="text-muted small">
+        Utilisé pour préparer le message envoyé au client à chaque changement d'étape (bouton WhatsApp dans le Kanban « Commandes »).
+        Variables disponibles : <code>{'{client}'}</code>, <code>{'{ref}'}</code>, <code>{'{modele}'}</code>, <code>{'{statut}'}</code>.
+      </p>
+
+      {loading ? (
+        <p className="text-muted small mb-0">Chargement…</p>
+      ) : (
+        <form onSubmit={handleSave}>
+          <textarea className="form-control mb-3" rows={3} value={template} onChange={(e) => setTemplate(e.target.value)}></textarea>
+          {saved && <div className="status ok p-2 mb-2 small">Modèle enregistré.</div>}
+          <button type="submit" className="btn-iro btn btn-sm" disabled={saving}>
+            {saving ? 'Enregistrement…' : 'Enregistrer'}
+          </button>
+        </form>
+      )}
+    </div>
+  )
+}
+
 export default function Settings() {
   const [switches, setSwitches] = useState(paymentSwitches)
 
@@ -241,13 +290,7 @@ export default function Settings() {
           ))}
         </div>
 
-        <div className="glass p-4">
-          <div className="eyebrow mb-3">Modèles de messages WhatsApp</div>
-          <label className="font-mono small d-block mb-1">Confirmation de commande</label>
-          <textarea className="form-control mb-3" rows={3} defaultValue={'Bonjour {client}, votre commande {ref} ({model}) a bien été reçue. Merci de votre confiance ! — Maison Ìró'}></textarea>
-          <label className="font-mono small d-block mb-1">Commande prête</label>
-          <textarea className="form-control" rows={3} defaultValue={'Bonjour {client}, votre commande {ref} est prête ! Retrait possible dès le {date}.'}></textarea>
-        </div>
+        <WhatsAppSettings />
       </div>
     </div>
   )

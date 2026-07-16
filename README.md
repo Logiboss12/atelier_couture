@@ -123,7 +123,7 @@ L'API n'utilise pas Laravel Sanctum : l'authentification repose sur un système 
 | `/admin/promotions` | Promotions | admin uniquement |
 | `/admin/finances` | Finances | admin uniquement |
 | `/admin/equipe` | Équipe (création de comptes employés) | admin uniquement |
-| `/admin/parametres` | Paramètres (workflow de commande personnalisable, identifiants de paiement CinetPay) | admin uniquement |
+| `/admin/parametres` | Paramètres (workflow de commande personnalisable, identifiants de paiement CinetPay, modèle de message WhatsApp) | admin uniquement |
 
 ## Workflows métier
 
@@ -134,6 +134,8 @@ L'API n'utilise pas Laravel Sanctum : l'authentification repose sur un système 
 **Paiement Mobile Money** : intégration [CinetPay](https://cinetpay.com/) (agrégateur MTN MoMo / Orange Money / carte, pas d'API MTN/Orange directe). Identifiants (`cinetpay_api_key`, `cinetpay_site_id`) configurables depuis `/admin/parametres`, stockés en base (table `settings`). Le client est redirigé vers la page de paiement hébergée CinetPay ; la confirmation arrive par webhook (`POST /api/webhooks/cinetpay`), qui revérifie toujours le statut réel auprès de l'API CinetPay avant de valider la facture (jamais de confiance aveugle dans le webhook).
 
 **Suivi de commande** : dès qu'une facture liée à une commande passe à `payée`/`partielle`, la commande quitte automatiquement sa première étape pour la suivante. L'admin (ou l'employé) fait ensuite progresser la commande par glisser-déposer dans le Kanban. **Le workflow de commande est personnalisable** depuis `/admin/parametres` : ajout/suppression/renommage/réordonnancement des étapes (table `order_statuses`), reflété en temps réel dans le Kanban admin et le suivi client. Chaque changement de statut (automatique ou manuel) génère une **notification** pour le client, visible via la cloche dans la navbar — jamais un nouveau devis.
+
+**Notification WhatsApp** : pas d'API WhatsApp Business officielle (facturée au message depuis juillet 2025, lourde à mettre en place) ni de librairie non-officielle (risque de bannissement du numéro) — chaque carte du Kanban affiche un bouton WhatsApp qui ouvre un lien `wa.me` avec le message déjà rédigé (variables `{client}`, `{ref}`, `{modele}`, `{statut}`, modèle personnalisable depuis `/admin/parametres`) ; l'admin/employé n'a plus qu'à cliquer « Envoyer ». Gratuit, indépendant, zéro risque.
 
 **Catalogue** : les articles sont organisés en trois grandes catégories — **Vêtements**, **Mercerie** et **Tissus** — chacune avec ses propres sous-catégories. L'admin gère le nom, le prix, le stock et la **photo** de chaque article (upload direct, stocké sur le disque `public` de Laravel). Les tissus ont en plus un prix au mètre optionnel : s'il est renseigné, le tissu devient achetable dans la boutique (sinon il reste une matière interne, visible seulement en gestion de stock).
 

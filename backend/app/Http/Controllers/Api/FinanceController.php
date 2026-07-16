@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\CashMovement;
 use App\Models\Invoice;
+use App\Models\Order;
 use Illuminate\Support\Carbon;
 
 class FinanceController extends Controller
@@ -63,6 +64,36 @@ class FinanceController extends Controller
             ];
         });
 
+        $orderProfitability = Order::with(['quotes' => fn ($q) => $q->latest('id'), 'invoices'])
+            ->get()
+            ->map(function (Order $order) {
+                $quote = $order->quotes->first();
+
+                if (! $quote || ! $quote->montant) {
+                    return null;
+                }
+
+                $matieres = $quote->montant_matieres ?? 0;
+                $marge = $quote->montant - $matieres;
+
+                return [
+                    'order_id' => $order->id,
+                    'ref' => $order->ref,
+                    'modele' => $order->modele,
+                    'montant' => $quote->montant,
+                    'montant_matieres' => $matieres,
+                    'marge' => $marge,
+                    'marge_pct' => $quote->montant > 0 ? round($marge / $quote->montant * 100) : null,
+                    'payee' => $order->invoices->isNotEmpty() && $order->invoices->every(fn ($i) => $i->statut === 'payee'),
+                ];
+            })
+            ->filter()
+            ->values();
+
+        $margeMoyennePct = $orderProfitability->isNotEmpty()
+            ? round($orderProfitability->avg('marge_pct'))
+            : null;
+
         return response()->json([
             'solde' => $solde,
             'entrees_mois' => $entrees,
@@ -73,6 +104,8 @@ class FinanceController extends Controller
             'payment_methods' => $paymentMethods,
             'expense_categories' => $expenseCategories,
             'revenue_by_month' => $revenueByMonth,
+            'order_profitability' => $orderProfitability,
+            'marge_moyenne_pct' => $margeMoyennePct,
         ]);
     }
 }

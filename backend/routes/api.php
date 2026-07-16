@@ -65,6 +65,7 @@ Route::middleware(['auth.token', 'staff'])->group(function () {
     Route::delete('orders/{order}/photos', [OrderController::class, 'removePhoto']);
     Route::apiResource('quotes', QuoteController::class);
     Route::apiResource('deliveries', DeliveryController::class);
+    Route::get('settings/whatsapp-template', [SettingController::class, 'whatsappTemplate']);
 });
 
 // Back-office complet : réservé aux administrateurs (catalogue, stocks, finances, équipe, promotions).

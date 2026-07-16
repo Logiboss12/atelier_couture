@@ -6,6 +6,7 @@ function normalize(o) {
     ref: o.ref,
     clientId: o.client_id,
     client: o.client?.nom ?? '',
+    clientTel: o.client?.tel ?? null,
     modele: o.modele,
     instructions: o.instructions ?? '',
     photos: o.photo_urls ?? [],

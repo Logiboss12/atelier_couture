@@ -40,6 +40,23 @@ export async function getFinanceKpis() {
   ]
 }
 
+export async function getOrderProfitability() {
+  const summary = await getFinanceSummary()
+  return {
+    margeMoyennePct: summary.marge_moyenne_pct,
+    orders: (summary.order_profitability || []).map((o) => ({
+      orderId: o.order_id,
+      ref: o.ref,
+      modele: o.modele,
+      montant: o.montant,
+      montantMatieres: o.montant_matieres,
+      marge: o.marge,
+      margePct: o.marge_pct,
+      payee: o.payee,
+    })),
+  }
+}
+
 export async function getPaymentMethods() {
   const summary = await getFinanceSummary()
   return summary.payment_methods.map((m) => ({

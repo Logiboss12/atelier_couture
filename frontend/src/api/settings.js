@@ -7,3 +7,7 @@ export function getSettings() {
 export function updateSettings(settings) {
   return request('/settings', { method: 'PUT', body: JSON.stringify({ settings }) })
 }
+
+export function getWhatsAppTemplate() {
+  return request('/settings/whatsapp-template')
+}
