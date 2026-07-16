@@ -11,6 +11,7 @@ use App\Models\OrderStatus;
 use App\Models\Product;
 use App\Models\Quote;
 use App\Models\Textile;
+use App\Services\CinetPayService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -216,6 +217,43 @@ class MeController extends Controller
         abort_if($invoice->statut === 'en_attente', 422, 'Facture en attente de validation.');
 
         return InvoiceController::renderPdf($invoice);
+    }
+
+    public function payInvoiceCheckout(Request $request, Invoice $invoice, CinetPayService $cinetPay)
+    {
+        abort_unless($invoice->client_id === $request->user()->client?->id, 403);
+        abort_unless($invoice->statut === 'en_attente', 422, 'Cette facture n\'est plus en attente de paiement.');
+        abort_unless($invoice->mode_paiement === 'mobile_money', 422, 'Ce mode de règlement n\'est pas le paiement Mobile Money.');
+
+        $invoice->load('client');
+        $transactionId = "{$invoice->numero}-".time();
+        $invoice->update(['cinetpay_transaction_id' => $transactionId]);
+
+        $frontendUrl = config('cors.allowed_origins')[0] ?? config('app.url');
+        [$prenom, $nom] = array_pad(explode(' ', $invoice->client->nom ?? 'Client Maison Iro', 2), 2, 'Maison Iro');
+
+        try {
+            $data = $cinetPay->initPayment([
+                'transaction_id' => $transactionId,
+                'amount' => (int) $invoice->total,
+                'description' => "Facture {$invoice->numero} — Maison Ìró",
+                'notify_url' => rtrim(config('app.url'), '/').'/api/webhooks/cinetpay',
+                'return_url' => rtrim($frontendUrl, '/')."/facture/{$invoice->id}",
+                'customer_name' => $prenom,
+                'customer_surname' => $nom,
+                'customer_email' => $invoice->client->email ?? 'client@maison-iro.com',
+                'customer_phone_number' => $invoice->client->tel ?? '000000000',
+                'customer_address' => $invoice->adresse_livraison ?? 'N/A',
+                'customer_city' => $invoice->ville_livraison ?? $invoice->client->ville ?? 'Douala',
+                'customer_country' => 'CM',
+                'customer_state' => 'CM',
+                'customer_zip_code' => '00000',
+            ]);
+        } catch (\RuntimeException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
+
+        return response()->json(['payment_url' => $data['payment_url']]);
     }
 
     public function convertQuote(Request $request, Quote $quote)

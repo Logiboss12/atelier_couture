@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\CashMovement;
 use App\Models\Invoice;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
@@ -83,25 +82,20 @@ class InvoiceController extends Controller
         ]);
 
         $previousStatut = $invoice->statut;
-        $wasUnpaid = $previousStatut !== 'payee';
+
+        if (($data['statut'] ?? null) === 'payee') {
+            unset($data['statut']);
+            $invoice->update($data);
+            $invoice->markAsPaid();
+
+            return $invoice;
+        }
 
         $invoice->update($data);
 
-        if ($wasUnpaid && $invoice->statut === 'payee') {
-            CashMovement::create([
-                'type' => 'in',
-                'label' => "Facture {$invoice->numero}",
-                'date' => now(),
-                'moyen_paiement' => $this->mapMoyenPaiement($invoice->mode_paiement),
-                'montant' => $invoice->total,
-                'order_id' => $invoice->order_id,
-            ]);
-        }
+        $becamePartial = $invoice->statut === 'partielle' && ! in_array($previousStatut, ['payee', 'partielle']);
 
-        $becamePaidOrPartial = in_array($invoice->statut, ['payee', 'partielle'])
-            && ! in_array($previousStatut, ['payee', 'partielle']);
-
-        if ($becamePaidOrPartial && $invoice->order && $invoice->order->statut === 'recue') {
+        if ($becamePartial && $invoice->order && $invoice->order->statut === 'recue') {
             $invoice->order->update(['statut' => 'encours']);
             $invoice->order->notifyStatusChange();
         }
@@ -114,14 +108,5 @@ class InvoiceController extends Controller
         $invoice->delete();
 
         return response()->noContent();
-    }
-
-    private function mapMoyenPaiement(?string $modePaiement): string
-    {
-        return match ($modePaiement) {
-            'especes_livraison' => 'especes',
-            'carte', 'mobile_money' => $modePaiement,
-            default => 'especes',
-        };
     }
 }

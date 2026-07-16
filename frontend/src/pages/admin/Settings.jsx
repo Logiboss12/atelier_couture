@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useFetch } from '../../api/useFetch.js'
 import { getWorkflowSteps, createWorkflowStep, updateWorkflowStep, deleteWorkflowStep, reorderWorkflowSteps } from '../../api/orderStatuses.js'
+import { getSettings, updateSettings } from '../../api/settings.js'
 
 const paymentSwitches = [
   { id: 'esp', label: 'Espèces', checked: true },
@@ -132,6 +133,66 @@ function WorkflowSettings() {
   )
 }
 
+function PaymentSettings() {
+  const { data: settings, loading } = useFetch(getSettings, [])
+  const [apiKey, setApiKey] = useState('')
+  const [siteId, setSiteId] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState(null)
+  const [saved, setSaved] = useState(false)
+
+  useEffect(() => {
+    if (settings) {
+      setApiKey(settings.cinetpay_api_key || '')
+      setSiteId(settings.cinetpay_site_id || '')
+    }
+  }, [settings])
+
+  const handleSave = async (e) => {
+    e.preventDefault()
+    setSaving(true)
+    setError(null)
+    setSaved(false)
+    try {
+      await updateSettings({ cinetpay_api_key: apiKey, cinetpay_site_id: siteId })
+      setSaved(true)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="glass p-4">
+      <div className="eyebrow mb-3">Paiement Mobile Money (CinetPay)</div>
+      <p className="text-muted small">
+        Renseignez vos identifiants CinetPay pour activer le paiement Mobile Money (MTN MoMo, Orange Money) en ligne.
+        Les factures se valident alors automatiquement dès la confirmation du paiement.
+      </p>
+
+      {loading ? (
+        <p className="text-muted small mb-0">Chargement…</p>
+      ) : (
+        <form onSubmit={handleSave}>
+          <label className="font-mono small d-block mb-1">Clé API (apikey)</label>
+          <input type="password" className="form-control mb-3" value={apiKey} onChange={(e) => setApiKey(e.target.value)} autoComplete="off" />
+
+          <label className="font-mono small d-block mb-1">Identifiant du site (site_id)</label>
+          <input type="text" className="form-control mb-3" value={siteId} onChange={(e) => setSiteId(e.target.value)} autoComplete="off" />
+
+          {error && <div className="status danger p-2 mb-2 small">{error}</div>}
+          {saved && <div className="status ok p-2 mb-2 small">Configuration enregistrée.</div>}
+
+          <button type="submit" className="btn-iro btn btn-sm" disabled={saving}>
+            {saving ? 'Enregistrement…' : 'Enregistrer'}
+          </button>
+        </form>
+      )}
+    </div>
+  )
+}
+
 export default function Settings() {
   const [switches, setSwitches] = useState(paymentSwitches)
 
@@ -141,6 +202,10 @@ export default function Settings() {
     <div className="row g-3" style={{ maxWidth: 1000 }}>
       <div className="col-12">
         <WorkflowSettings />
+      </div>
+
+      <div className="col-12">
+        <PaymentSettings />
       </div>
 
       <div className="col-12 col-lg-6">

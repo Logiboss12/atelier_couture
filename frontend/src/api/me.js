@@ -30,6 +30,10 @@ export function downloadMyInvoicePdf(id, filename) {
   return apiDownload(`/me/invoices/${id}/pdf`, filename)
 }
 
+export function payInvoiceCheckout(id) {
+  return request(`/me/invoices/${id}/pay`, { method: 'POST' })
+}
+
 export function convertQuote(id, payload) {
   return request(`/me/quotes/${id}/convert`, { method: 'POST', body: JSON.stringify(payload) })
 }

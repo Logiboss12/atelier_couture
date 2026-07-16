@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useFetch } from '../../api/useFetch.js'
-import { getMyInvoice, downloadMyInvoicePdf } from '../../api/me.js'
+import { getMyInvoice, downloadMyInvoicePdf, payInvoiceCheckout } from '../../api/me.js'
 
 const money = (n) => `${Number(n || 0).toLocaleString('fr-FR')} F`
 
@@ -15,6 +15,8 @@ export default function InvoiceView() {
   const { id } = useParams()
   const { data: invoice, loading, error } = useFetch(() => getMyInvoice(id), [id])
   const [downloading, setDownloading] = useState(false)
+  const [paying, setPaying] = useState(false)
+  const [payError, setPayError] = useState(null)
 
   const handleDownload = async () => {
     setDownloading(true)
@@ -22,6 +24,18 @@ export default function InvoiceView() {
       await downloadMyInvoicePdf(id, `facture-${invoice.numero}.pdf`)
     } finally {
       setDownloading(false)
+    }
+  }
+
+  const handlePay = async () => {
+    setPaying(true)
+    setPayError(null)
+    try {
+      const { payment_url: paymentUrl } = await payInvoiceCheckout(id)
+      window.location.href = paymentUrl
+    } catch (err) {
+      setPayError(err.message)
+      setPaying(false)
     }
   }
 
@@ -58,7 +72,18 @@ export default function InvoiceView() {
         )}
       </div>
 
-      {pending && (
+      {pending && invoice.mode_paiement === 'mobile_money' && (
+        <div className="status warn p-3 mb-4 no-print">
+          <i className="bi bi-hourglass-split me-2"></i>
+          En attente de paiement.
+          <button type="button" className="btn-iro btn btn-sm ms-2" onClick={handlePay} disabled={paying}>
+            <i className="bi bi-phone me-1"></i>{paying ? 'Redirection…' : 'Payer par Mobile Money'}
+          </button>
+          {payError && <div className="small mt-2">{payError}</div>}
+        </div>
+      )}
+
+      {pending && invoice.mode_paiement !== 'mobile_money' && (
         <div className="status warn p-3 mb-4 no-print">
           <i className="bi bi-hourglass-split me-2"></i>
           En attente de validation par notre équipe. La facture sera téléchargeable une fois confirmée.

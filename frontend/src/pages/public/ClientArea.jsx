@@ -4,7 +4,7 @@ import StatusBadge from '../../components/StatusBadge.jsx'
 import StepProgress from '../../components/StepProgress.jsx'
 import TextileTile from '../../components/TextileTile.jsx'
 import { useFetch } from '../../api/useFetch.js'
-import { getMe, createSurMesureOrder, uploadMyOrderPhoto } from '../../api/me.js'
+import { getMe, createSurMesureOrder, uploadMyOrderPhoto, payInvoiceCheckout } from '../../api/me.js'
 import { getTextiles } from '../../api/textiles.js'
 import { getProducts } from '../../api/catalog.js'
 import { getWorkflowSteps } from '../../api/orderStatuses.js'
@@ -39,10 +39,27 @@ export default function ClientArea() {
   const { data, loading, error } = useFetch(getMe, [refreshKey])
   const { data: workflowSteps } = useFetch(getWorkflowSteps, [])
   const navigate = useNavigate()
+  const [payingId, setPayingId] = useState(null)
+  const [payError, setPayError] = useState(null)
+  const [payErrorId, setPayErrorId] = useState(null)
 
   const client = data?.client
   const measurements = client?.measurements || []
   const steps = workflowSteps || []
+
+  const handlePay = async (invoiceId) => {
+    setPayingId(invoiceId)
+    setPayError(null)
+    setPayErrorId(null)
+    try {
+      const { payment_url: paymentUrl } = await payInvoiceCheckout(invoiceId)
+      window.location.href = paymentUrl
+    } catch (err) {
+      setPayError(err.message)
+      setPayErrorId(invoiceId)
+      setPayingId(null)
+    }
+  }
 
   if (loading) {
     return (
@@ -206,7 +223,15 @@ export default function ClientArea() {
                             <i className="bi bi-download me-1"></i>Télécharger
                           </Link>
                         )}
+                        {inv.statut === 'en_attente' && inv.mode_paiement === 'mobile_money' && (
+                          <button type="button" className="btn-iro btn btn-sm" onClick={() => handlePay(inv.id)} disabled={payingId === inv.id}>
+                            <i className="bi bi-phone me-1"></i>{payingId === inv.id ? 'Redirection…' : 'Payer par Mobile Money'}
+                          </button>
+                        )}
                       </div>
+                      {payErrorId === inv.id && (
+                        <div className="status danger p-2 mt-2 small">{payError}</div>
+                      )}
                     </div>
                   ))}
                 </div>

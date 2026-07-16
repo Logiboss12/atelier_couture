@@ -12,10 +12,12 @@ use App\Http\Controllers\Api\MeasurementController;
 use App\Http\Controllers\Api\MeController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\OrderStatusController;
+use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\ProductCollectionController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\PromotionController;
 use App\Http\Controllers\Api\QuoteController;
+use App\Http\Controllers\Api\SettingController;
 use App\Http\Controllers\Api\StockMovementController;
 use App\Http\Controllers\Api\TeamMemberController;
 use App\Http\Controllers\Api\TextileController;
@@ -36,6 +38,7 @@ Route::middleware('auth.token')->group(function () {
     Route::post('me/checkout', [MeController::class, 'checkout']);
     Route::get('me/invoices/{invoice}', [MeController::class, 'showInvoice']);
     Route::get('me/invoices/{invoice}/pdf', [MeController::class, 'downloadInvoicePdf']);
+    Route::post('me/invoices/{invoice}/pay', [MeController::class, 'payInvoiceCheckout']);
     Route::post('me/quotes/{quote}/convert', [MeController::class, 'convertQuote']);
     Route::post('me/notifications/{notification}/read', [MeController::class, 'markNotificationRead']);
 });
@@ -48,6 +51,9 @@ Route::get('collections/{collection}', [ProductCollectionController::class, 'sho
 Route::get('products', [ProductController::class, 'index']);
 Route::get('products/{product}', [ProductController::class, 'show']);
 Route::get('order-statuses', [OrderStatusController::class, 'index']);
+
+// Webhook CinetPay : appelé par CinetPay lui-même (jamais par le navigateur), pas d'auth token.
+Route::post('webhooks/cinetpay', [PaymentController::class, 'cinetpayWebhook']);
 
 // Back-office limité : accessible aux couturiers/employés comme aux admins
 // (traiter les commandes, saisir les mesures, faire progresser les étapes, envoyer un devis, gérer les livraisons).
@@ -84,4 +90,7 @@ Route::middleware(['auth.token', 'admin'])->group(function () {
     Route::apiResource('promotions', PromotionController::class);
     Route::apiResource('events', EventController::class);
     Route::apiResource('cash-movements', CashMovementController::class);
+
+    Route::get('settings', [SettingController::class, 'index']);
+    Route::put('settings', [SettingController::class, 'update']);
 });
