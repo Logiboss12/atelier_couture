@@ -7,6 +7,7 @@ use App\Models\Invoice;
 use App\Models\Measurement;
 use App\Models\Notification;
 use App\Models\Order;
+use App\Models\OrderStatus;
 use App\Models\Product;
 use App\Models\Quote;
 use App\Models\Textile;
@@ -87,7 +88,7 @@ class MeController extends Controller
             'measurement_id' => $measurementId,
             'modele' => $data['modele'],
             'instructions' => $data['instructions'] ?? null,
-            'statut' => 'recue',
+            'statut' => OrderStatus::orderBy('position')->value('slug') ?? 'recue',
             'echeance' => now()->addWeeks(4),
         ]);
 

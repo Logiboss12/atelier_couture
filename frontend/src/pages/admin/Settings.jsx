@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { useFetch } from '../../api/useFetch.js'
+import { getWorkflowSteps, createWorkflowStep, updateWorkflowStep, deleteWorkflowStep, reorderWorkflowSteps } from '../../api/orderStatuses.js'
 
 const paymentSwitches = [
   { id: 'esp', label: 'Espèces', checked: true },
@@ -7,6 +9,129 @@ const paymentSwitches = [
   { id: 'vir', label: 'Virement', checked: false },
 ]
 
+function slugify(label) {
+  return label.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '_').replace(/(^_|_$)/g, '')
+}
+
+function WorkflowSettings() {
+  const [refreshKey, setRefreshKey] = useState(0)
+  const { data: steps, loading } = useFetch(getWorkflowSteps, [refreshKey])
+  const [newLabel, setNewLabel] = useState('')
+  const [newColor, setNewColor] = useState('#ff8a3d')
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState(null)
+
+  const refresh = () => setRefreshKey((k) => k + 1)
+
+  const handleAdd = async (e) => {
+    e.preventDefault()
+    setSaving(true)
+    setError(null)
+    try {
+      await createWorkflowStep({ slug: slugify(newLabel), label: newLabel, color: newColor })
+      setNewLabel('')
+      refresh()
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleRename = async (step, label) => {
+    await updateWorkflowStep(step.dbId, { label })
+    refresh()
+  }
+
+  const handleRecolor = async (step, color) => {
+    await updateWorkflowStep(step.dbId, { color })
+    refresh()
+  }
+
+  const handleToggleFinal = async (step) => {
+    await updateWorkflowStep(step.dbId, { is_final: !step.isFinal })
+    refresh()
+  }
+
+  const handleDelete = async (step) => {
+    if (!confirm(`Supprimer l'étape « ${step.label} » ?`)) return
+    setError(null)
+    try {
+      await deleteWorkflowStep(step.dbId)
+      refresh()
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
+  const handleMove = async (index, direction) => {
+    const target = index + direction
+    if (!steps || target < 0 || target >= steps.length) return
+    const reordered = [...steps]
+    const [moved] = reordered.splice(index, 1)
+    reordered.splice(target, 0, moved)
+    await reorderWorkflowSteps(reordered.map((s) => s.dbId))
+    refresh()
+  }
+
+  return (
+    <div className="glass p-4 mb-3">
+      <div className="eyebrow mb-3">Workflow de commande</div>
+      <p className="text-muted small">Personnalisez les étapes du Kanban « Commandes » : ordre, libellé, couleur.</p>
+
+      {loading || !steps ? (
+        <p className="text-muted small mb-0">Chargement…</p>
+      ) : (
+        <div className="d-flex flex-column gap-2 mb-3">
+          {steps.map((step, i) => (
+            <div key={step.dbId} className="d-flex align-items-center gap-2 p-2 rounded-3" style={{ border: '1px solid var(--iro-border)' }}>
+              <div className="d-flex flex-column gap-1">
+                <button type="button" className="btn-ghost btn btn-sm p-0" style={{ width: 22, height: 18, lineHeight: 1 }} onClick={() => handleMove(i, -1)} disabled={i === 0}>
+                  <i className="bi bi-caret-up-fill" style={{ fontSize: '.65rem' }}></i>
+                </button>
+                <button type="button" className="btn-ghost btn btn-sm p-0" style={{ width: 22, height: 18, lineHeight: 1 }} onClick={() => handleMove(i, 1)} disabled={i === steps.length - 1}>
+                  <i className="bi bi-caret-down-fill" style={{ fontSize: '.65rem' }}></i>
+                </button>
+              </div>
+              <input
+                type="color" className="form-control form-control-color p-0" style={{ width: 32, height: 32 }}
+                value={/^#/.test(step.color) ? step.color : '#888888'}
+                onChange={(e) => handleRecolor(step, e.target.value)}
+                title="Couleur"
+              />
+              <input
+                type="text" className="form-control form-control-sm" defaultValue={step.label}
+                onBlur={(e) => { if (e.target.value && e.target.value !== step.label) handleRename(step, e.target.value) }}
+              />
+              <label className="d-flex align-items-center gap-1 small text-muted text-nowrap" title="Étape finale (commande terminée)">
+                <input type="checkbox" checked={step.isFinal} onChange={() => handleToggleFinal(step)} /> Finale
+              </label>
+              <button type="button" className="btn-ghost btn btn-sm" onClick={() => handleDelete(step)}>
+                <i className="bi bi-trash"></i>
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <form className="d-flex gap-2" onSubmit={handleAdd}>
+        <input
+          type="color" className="form-control form-control-color p-0" style={{ width: 32, height: 32 }}
+          value={newColor} onChange={(e) => setNewColor(e.target.value)}
+        />
+        <input
+          type="text" className="form-control form-control-sm" placeholder="Nouvelle étape (ex. Contrôle qualité)"
+          value={newLabel} onChange={(e) => setNewLabel(e.target.value)} required
+        />
+        <button type="submit" className="btn-iro btn btn-sm text-nowrap" disabled={saving}>
+          <i className="bi bi-plus-lg me-1"></i>Ajouter
+        </button>
+      </form>
+      {error && <div className="status danger p-2 mt-2 small">{error}</div>}
+    </div>
+  )
+}
+
 export default function Settings() {
   const [switches, setSwitches] = useState(paymentSwitches)
 
@@ -14,6 +139,10 @@ export default function Settings() {
 
   return (
     <div className="row g-3" style={{ maxWidth: 1000 }}>
+      <div className="col-12">
+        <WorkflowSettings />
+      </div>
+
       <div className="col-12 col-lg-6">
         <div className="glass p-4">
           <div className="eyebrow mb-3">Profil de l'atelier</div>

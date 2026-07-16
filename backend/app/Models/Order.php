@@ -9,14 +9,6 @@ use Illuminate\Support\Facades\Storage;
 
 class Order extends Model
 {
-    private const STATUS_LABELS = [
-        'recue' => 'Reçue',
-        'encours' => 'En cours',
-        'finition' => 'Finition',
-        'prete' => 'Prête',
-        'livree' => 'Livrée',
-    ];
-
     protected $fillable = [
         'ref', 'client_id', 'textile_id', 'measurement_id', 'team_member_id', 'modele', 'instructions', 'photos', 'statut', 'echeance',
     ];
@@ -87,7 +79,7 @@ class Order extends Model
             return;
         }
 
-        $label = self::STATUS_LABELS[$this->statut] ?? $this->statut;
+        $label = OrderStatus::where('slug', $this->statut)->value('label') ?? $this->statut;
 
         $this->notifications()->create([
             'client_id' => $this->client_id,

@@ -3,13 +3,11 @@ import { Link } from 'react-router-dom'
 import KpiCard from '../../components/KpiCard.jsx'
 import StatusBadge from '../../components/StatusBadge.jsx'
 import TextileTile from '../../components/TextileTile.jsx'
-import { orderStatuses } from '../../mock/orders.js'
 import { useFetch } from '../../api/useFetch.js'
 import { getOrders } from '../../api/orders.js'
+import { getWorkflowSteps } from '../../api/orderStatuses.js'
 import { getFinanceSummary } from '../../api/finances.js'
 import { getRelanceAlerts } from '../../api/alerts.js'
-
-const statusMap = Object.fromEntries(orderStatuses.map((s) => [s.id, s]))
 
 const MOIS_COURTS = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc']
 
@@ -19,8 +17,10 @@ function formatF(value) {
 
 export default function Dashboard() {
   const { data: orders } = useFetch(getOrders, [])
+  const { data: workflowSteps } = useFetch(getWorkflowSteps, [])
   const { data: summary } = useFetch(getFinanceSummary, [])
   const { data: relanceAlerts } = useFetch(getRelanceAlerts, [])
+  const statusMap = Object.fromEntries((workflowSteps || []).map((s) => [s.id, s]))
 
   const recentOrders = [...(orders || [])].sort((a, b) => b.id - a.id).slice(0, 5)
 

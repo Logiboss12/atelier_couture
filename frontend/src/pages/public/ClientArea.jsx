@@ -7,6 +7,7 @@ import { useFetch } from '../../api/useFetch.js'
 import { getMe, createSurMesureOrder, uploadMyOrderPhoto } from '../../api/me.js'
 import { getTextiles } from '../../api/textiles.js'
 import { getProducts } from '../../api/catalog.js'
+import { getWorkflowSteps } from '../../api/orderStatuses.js'
 import { measurementFields } from '../../mock/customOrder.js'
 
 const menu = [
@@ -15,9 +16,14 @@ const menu = [
   { id: 'creation', label: 'Mesures & pièce sur-mesure', icon: 'bi-stars' },
 ]
 
-const orderSteps = ['recue', 'encours', 'finition', 'prete', 'livree']
-const orderStepLabels = ['Reçue', 'En cours', 'Finition', 'Prête', 'Livrée']
-const orderBadgeStatus = { recue: 'info', encours: 'warn', finition: 'warn', prete: 'ok', livree: 'neutral' }
+function orderBadgeStatus(steps, slug) {
+  const index = steps.findIndex((s) => s.id === slug)
+  const step = steps[index]
+  if (!step) return 'neutral'
+  if (step.isFinal) return 'ok'
+  if (index === 0) return 'info'
+  return 'warn'
+}
 
 const invoiceStatusLabels = { en_attente: 'En attente', payee: 'Payée', partielle: 'Partielle', impayee: 'Impayée' }
 const invoiceBadgeStatus = { en_attente: 'warn', payee: 'ok', partielle: 'info', impayee: 'danger' }
@@ -31,10 +37,12 @@ export default function ClientArea() {
   const [active, setActive] = useState('suivi')
   const [refreshKey, setRefreshKey] = useState(0)
   const { data, loading, error } = useFetch(getMe, [refreshKey])
+  const { data: workflowSteps } = useFetch(getWorkflowSteps, [])
   const navigate = useNavigate()
 
   const client = data?.client
   const measurements = client?.measurements || []
+  const steps = workflowSteps || []
 
   if (loading) {
     return (
@@ -95,9 +103,9 @@ export default function ClientArea() {
                       <div className="font-mono text-muted small">{order.ref}</div>
                       <div className="font-display fs-4">{order.modele}</div>
                     </div>
-                    <StatusBadge status={orderBadgeStatus[order.statut] || 'neutral'}>{orderStepLabels[orderSteps.indexOf(order.statut)] || order.statut}</StatusBadge>
+                    <StatusBadge status={orderBadgeStatus(steps, order.statut)}>{steps.find((s) => s.id === order.statut)?.label || order.statut}</StatusBadge>
                   </div>
-                  <StepProgress steps={orderStepLabels} active={orderSteps.indexOf(order.statut)} />
+                  <StepProgress steps={steps.map((s) => s.label)} active={steps.findIndex((s) => s.id === order.statut)} />
                 </div>
               ))}
             </div>

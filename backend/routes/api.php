@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\InvoiceController;
 use App\Http\Controllers\Api\MeasurementController;
 use App\Http\Controllers\Api\MeController;
 use App\Http\Controllers\Api\OrderController;
+use App\Http\Controllers\Api\OrderStatusController;
 use App\Http\Controllers\Api\ProductCollectionController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\PromotionController;
@@ -46,6 +47,7 @@ Route::get('collections', [ProductCollectionController::class, 'index']);
 Route::get('collections/{collection}', [ProductCollectionController::class, 'show']);
 Route::get('products', [ProductController::class, 'index']);
 Route::get('products/{product}', [ProductController::class, 'show']);
+Route::get('order-statuses', [OrderStatusController::class, 'index']);
 
 // Back-office limité : accessible aux couturiers/employés comme aux admins
 // (traiter les commandes, saisir les mesures, faire progresser les étapes, envoyer un devis, gérer les livraisons).
@@ -68,6 +70,11 @@ Route::middleware(['auth.token', 'admin'])->group(function () {
     Route::apiResource('collections', ProductCollectionController::class)->except(['index', 'show']);
     Route::apiResource('products', ProductController::class)->except(['index', 'show']);
     Route::post('products/{product}/image', [ProductController::class, 'uploadImage']);
+
+    Route::post('order-statuses', [OrderStatusController::class, 'store']);
+    Route::put('order-statuses/reorder', [OrderStatusController::class, 'reorder']);
+    Route::put('order-statuses/{orderStatus}', [OrderStatusController::class, 'update']);
+    Route::delete('order-statuses/{orderStatus}', [OrderStatusController::class, 'destroy']);
 
     Route::apiResource('team-members', TeamMemberController::class);
     Route::apiResource('invoices', InvoiceController::class);

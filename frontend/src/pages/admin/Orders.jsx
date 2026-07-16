@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import TextileTile from '../../components/TextileTile.jsx'
-import { orderStatuses } from '../../mock/orders.js'
 import { useFetch } from '../../api/useFetch.js'
 import {
   getOrders, updateOrderStatus, updateOrderInstructions, uploadOrderPhoto, removeOrderPhoto,
 } from '../../api/orders.js'
+import { getWorkflowSteps } from '../../api/orderStatuses.js'
 import { createQuote } from '../../api/quotes.js'
 
 function urgencyColor(dateStr) {
@@ -206,6 +206,7 @@ function OrderCard({ order, onDragStart, onChanged }) {
 export default function Orders() {
   const [refreshKey, setRefreshKey] = useState(0)
   const { data: orders, loading } = useFetch(getOrders, [refreshKey])
+  const { data: workflowSteps, loading: loadingSteps } = useFetch(getWorkflowSteps, [])
   const [dragOverColumn, setDragOverColumn] = useState(null)
   const [moving, setMoving] = useState(false)
 
@@ -228,17 +229,17 @@ export default function Orders() {
     }
   }
 
-  if (loading || !orders) return <p className="text-muted">Chargement…</p>
+  if (loading || loadingSteps || !orders || !workflowSteps) return <p className="text-muted">Chargement…</p>
 
   return (
     <div>
       <div className="d-flex justify-content-between align-items-center mb-3">
-        <p className="text-muted mb-0 d-none d-sm-block">Glissez les commandes d'une étape à l'autre.</p>
+        <p className="text-muted mb-0 d-none d-sm-block">Glissez les commandes d'une étape à l'autre. Le workflow se personnalise dans Paramètres.</p>
         {moving && <span className="text-muted small">Mise à jour…</span>}
       </div>
 
       <div className="d-flex gap-3 overflow-auto pb-2">
-        {orderStatuses.map((status) => {
+        {workflowSteps.map((status) => {
           const items = orders.filter((o) => o.statut === status.id)
           return (
             <div

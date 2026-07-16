@@ -30,7 +30,7 @@ class OrderController extends Controller
             'team_member_id' => 'nullable|exists:team_members,id',
             'modele' => 'required|string',
             'instructions' => 'nullable|string',
-            'statut' => 'required|in:recue,encours,finition,prete,livree',
+            'statut' => 'required|exists:order_statuses,slug',
             'echeance' => 'required|date',
         ]);
 
@@ -51,7 +51,7 @@ class OrderController extends Controller
             'team_member_id' => 'nullable|exists:team_members,id',
             'modele' => 'sometimes|required|string',
             'instructions' => 'nullable|string',
-            'statut' => 'sometimes|required|in:recue,encours,finition,prete,livree',
+            'statut' => 'sometimes|required|exists:order_statuses,slug',
             'echeance' => 'sometimes|required|date',
         ]);
 
