@@ -40,7 +40,7 @@ php artisan migrate --seed  # crée le schéma + données de démo + un compte a
 php artisan serve           # http://127.0.0.1:8000
 ```
 
-Compte admin créé par le seeder : `admin@atelier-couture.test` / `admin1234` (à changer en production).
+
 
 ### Frontend
 
