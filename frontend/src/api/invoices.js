@@ -1,4 +1,4 @@
-import { apiList, apiUpdate } from './client.js'
+import { apiList, apiUpdate, apiDownload } from './client.js'
 
 export async function getPendingInvoices() {
   const rows = await apiList('invoices')
@@ -20,4 +20,8 @@ export async function getPendingInvoices() {
 
 export function confirmInvoice(id) {
   return apiUpdate('invoices', id, { statut: 'payee' })
+}
+
+export function downloadInvoicePdf(id, filename) {
+  return apiDownload(`/invoices/${id}/pdf`, filename)
 }

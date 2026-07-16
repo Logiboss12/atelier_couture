@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\EventController;
 use App\Http\Controllers\Api\FabricStockController;
 use App\Http\Controllers\Api\FinanceController;
 use App\Http\Controllers\Api\InvoiceController;
+use App\Http\Controllers\Api\MeasurementController;
 use App\Http\Controllers\Api\MeController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\ProductCollectionController;
@@ -29,8 +30,11 @@ Route::middleware('auth.token')->group(function () {
     // Client-scoped "espace client" endpoints: act only on the authenticated user's own data.
     Route::get('me', [MeController::class, 'show']);
     Route::post('me/orders', [MeController::class, 'storeOrder']);
+    Route::post('me/measurements', [MeController::class, 'storeMeasurement']);
+    Route::post('me/orders/{order}/photos', [MeController::class, 'uploadOrderPhoto']);
     Route::post('me/checkout', [MeController::class, 'checkout']);
     Route::get('me/invoices/{invoice}', [MeController::class, 'showInvoice']);
+    Route::get('me/invoices/{invoice}/pdf', [MeController::class, 'downloadInvoicePdf']);
     Route::post('me/quotes/{quote}/convert', [MeController::class, 'convertQuote']);
     Route::post('me/notifications/{notification}/read', [MeController::class, 'markNotificationRead']);
 });
@@ -43,7 +47,19 @@ Route::get('collections/{collection}', [ProductCollectionController::class, 'sho
 Route::get('products', [ProductController::class, 'index']);
 Route::get('products/{product}', [ProductController::class, 'show']);
 
-// Everything else is the back-office: admin-only.
+// Back-office limité : accessible aux couturiers/employés comme aux admins
+// (traiter les commandes, saisir les mesures, faire progresser les étapes, envoyer un devis, gérer les livraisons).
+Route::middleware(['auth.token', 'staff'])->group(function () {
+    Route::apiResource('clients', ClientController::class);
+    Route::apiResource('measurements', MeasurementController::class);
+    Route::apiResource('orders', OrderController::class);
+    Route::post('orders/{order}/photos', [OrderController::class, 'uploadPhoto']);
+    Route::delete('orders/{order}/photos', [OrderController::class, 'removePhoto']);
+    Route::apiResource('quotes', QuoteController::class);
+    Route::apiResource('deliveries', DeliveryController::class);
+});
+
+// Back-office complet : réservé aux administrateurs (catalogue, stocks, finances, équipe, promotions).
 Route::middleware(['auth.token', 'admin'])->group(function () {
     Route::get('finances/summary', [FinanceController::class, 'summary']);
 
@@ -54,14 +70,11 @@ Route::middleware(['auth.token', 'admin'])->group(function () {
     Route::post('products/{product}/image', [ProductController::class, 'uploadImage']);
 
     Route::apiResource('team-members', TeamMemberController::class);
-    Route::apiResource('clients', ClientController::class);
-    Route::apiResource('orders', OrderController::class);
-    Route::apiResource('quotes', QuoteController::class);
     Route::apiResource('invoices', InvoiceController::class);
+    Route::get('invoices/{invoice}/pdf', [InvoiceController::class, 'pdf']);
     Route::apiResource('fabric-stocks', FabricStockController::class);
     Route::apiResource('stock-movements', StockMovementController::class);
     Route::apiResource('promotions', PromotionController::class);
     Route::apiResource('events', EventController::class);
     Route::apiResource('cash-movements', CashMovementController::class);
-    Route::apiResource('deliveries', DeliveryController::class);
 });

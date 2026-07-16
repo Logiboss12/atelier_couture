@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Storage;
 
 class Order extends Model
 {
@@ -17,12 +18,23 @@ class Order extends Model
     ];
 
     protected $fillable = [
-        'ref', 'client_id', 'textile_id', 'team_member_id', 'modele', 'statut', 'echeance',
+        'ref', 'client_id', 'textile_id', 'measurement_id', 'team_member_id', 'modele', 'instructions', 'photos', 'statut', 'echeance',
     ];
+
+    protected $appends = ['photo_urls'];
 
     protected $casts = [
         'echeance' => 'date',
+        'photos' => 'array',
     ];
+
+    public function getPhotoUrlsAttribute(): array
+    {
+        return collect($this->photos ?? [])
+            ->map(fn (string $path) => ['path' => $path, 'url' => Storage::url($path)])
+            ->values()
+            ->all();
+    }
 
     public function client(): BelongsTo
     {
@@ -32,6 +44,11 @@ class Order extends Model
     public function textile(): BelongsTo
     {
         return $this->belongsTo(Textile::class);
+    }
+
+    public function measurement(): BelongsTo
+    {
+        return $this->belongsTo(Measurement::class);
     }
 
     public function assignee(): BelongsTo

@@ -1,6 +1,7 @@
+import { useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useFetch } from '../../api/useFetch.js'
-import { getMyInvoice } from '../../api/me.js'
+import { getMyInvoice, downloadMyInvoicePdf } from '../../api/me.js'
 
 const money = (n) => `${Number(n || 0).toLocaleString('fr-FR')} F`
 
@@ -13,6 +14,16 @@ const paymentLabels = {
 export default function InvoiceView() {
   const { id } = useParams()
   const { data: invoice, loading, error } = useFetch(() => getMyInvoice(id), [id])
+  const [downloading, setDownloading] = useState(false)
+
+  const handleDownload = async () => {
+    setDownloading(true)
+    try {
+      await downloadMyInvoicePdf(id, `facture-${invoice.numero}.pdf`)
+    } finally {
+      setDownloading(false)
+    }
+  }
 
   if (loading) {
     return (
@@ -41,8 +52,8 @@ export default function InvoiceView() {
       <div className="d-flex justify-content-between align-items-center mb-4 no-print">
         <span className="eyebrow">Facture {invoice.numero}</span>
         {!pending && (
-          <button type="button" className="btn-iro btn btn-sm" onClick={() => window.print()}>
-            <i className="bi bi-download me-2"></i>Télécharger (PDF)
+          <button type="button" className="btn-iro btn btn-sm" onClick={handleDownload} disabled={downloading}>
+            <i className="bi bi-download me-2"></i>{downloading ? 'Génération…' : 'Télécharger (PDF)'}
           </button>
         )}
       </div>

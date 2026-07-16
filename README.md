@@ -141,4 +141,5 @@ Restent en données statiques dans `src/mock/` (contenu éditorial ou non couver
 - `testimonials.js` (`heroStats`, `testimonials`) : témoignages et chiffres clés de la page d'accueil.
 - `booking.js` : créneaux de rendez-vous (pas de modèle « réservation » côté API).
 - `orders.js` (`orderStatuses`), `customOrder.js` : configuration statique (libellés d'étapes, choix de modèles/mensurations), pas des données métier.
-- `alerts.js` (`dueSoon`) : widget « Échéances 24/48h » du tableau de bord, encore en démonstration (les « Alertes de relance » juste au-dessus, elles, sont réelles).
+
+Le widget « Échéances 24/48h » du tableau de bord est désormais calculé en temps réel à partir des échéances de commandes en base (comme les « Alertes de relance » juste au-dessus).

@@ -11,13 +11,13 @@ export async function getClients() {
     email: c.email,
     commandes: c.orders_count ?? 0,
     depuis: c.client_depuis,
-    mensurations: {
-      poitrine: c.poitrine,
-      taille: c.taille,
-      hanches: c.hanches,
-      epaule: c.epaule,
-      manche: c.manche,
-      longueur: c.longueur,
-    },
+    measurements: (c.measurements || []).map((m) => ({
+      id: m.id,
+      typeVetement: m.type_vetement,
+      label: m.label,
+      valeurs: m.valeurs || {},
+      priseLe: (m.prise_le || '').slice(0, 10),
+      notes: m.notes,
+    })),
   }))
 }

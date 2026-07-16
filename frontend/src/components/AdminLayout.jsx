@@ -6,7 +6,7 @@ import { useAuth } from '../context/AuthContext.jsx'
 
 export default function AdminLayout() {
   const location = useLocation()
-  const { loading, isAuthenticated, isAdmin } = useAuth()
+  const { loading, isAuthenticated, isStaff } = useAuth()
 
   useEffect(() => {
     window.scrollTo(0, 0)
@@ -22,7 +22,7 @@ export default function AdminLayout() {
     )
   }
 
-  if (!isAuthenticated || !isAdmin) {
+  if (!isAuthenticated || !isStaff) {
     return <Navigate to="/connexion" state={{ from: location.pathname }} replace />
   }
 

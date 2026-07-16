@@ -4,15 +4,15 @@ import StatusBadge from '../../components/StatusBadge.jsx'
 import StepProgress from '../../components/StepProgress.jsx'
 import TextileTile from '../../components/TextileTile.jsx'
 import { useFetch } from '../../api/useFetch.js'
-import { getMe, createSurMesureOrder } from '../../api/me.js'
+import { getMe, createSurMesureOrder, uploadMyOrderPhoto } from '../../api/me.js'
 import { getTextiles } from '../../api/textiles.js'
-import { modelOptions, measurementFields } from '../../mock/customOrder.js'
+import { getProducts } from '../../api/catalog.js'
+import { measurementFields } from '../../mock/customOrder.js'
 
 const menu = [
   { id: 'suivi', label: 'Suivi de commande', icon: 'bi-scissors' },
-  { id: 'mesures', label: 'Carnet de mesures', icon: 'bi-rulers' },
   { id: 'docs', label: 'Devis & factures', icon: 'bi-receipt' },
-  { id: 'sur-mesure', label: 'Créer une pièce sur-mesure', icon: 'bi-stars' },
+  { id: 'creation', label: 'Mesures & pièce sur-mesure', icon: 'bi-stars' },
 ]
 
 const orderSteps = ['recue', 'encours', 'finition', 'prete', 'livree']
@@ -34,9 +34,7 @@ export default function ClientArea() {
   const navigate = useNavigate()
 
   const client = data?.client
-  const measurementValues = client
-    ? { poitrine: client.poitrine, taille: client.taille, hanches: client.hanches, epaule: client.epaule, manche: client.manche, longueur: client.longueur }
-    : {}
+  const measurements = client?.measurements || []
 
   if (loading) {
     return (
@@ -87,7 +85,7 @@ export default function ClientArea() {
             <div className="d-flex flex-column gap-3">
               {(client?.orders || []).length === 0 && (
                 <div className="glass p-4 text-muted">
-                  Aucune commande pour le moment. Lancez-vous depuis l'onglet « Créer une pièce sur-mesure ».
+                  Aucune commande pour le moment. Lancez-vous depuis l'onglet « Mesures & pièce sur-mesure ».
                 </div>
               )}
               {(client?.orders || []).map((order) => (
@@ -100,18 +98,6 @@ export default function ClientArea() {
                     <StatusBadge status={orderBadgeStatus[order.statut] || 'neutral'}>{orderStepLabels[orderSteps.indexOf(order.statut)] || order.statut}</StatusBadge>
                   </div>
                   <StepProgress steps={orderStepLabels} active={orderSteps.indexOf(order.statut)} />
-                </div>
-              ))}
-            </div>
-          )}
-
-          {active === 'mesures' && (
-            <div className="glass p-4">
-              <div className="eyebrow mb-3">Carnet de mesures</div>
-              {Object.entries(measurementValues).map(([k, v]) => (
-                <div key={k} className="d-flex justify-content-between border-bottom py-2" style={{ borderColor: 'var(--iro-border)' }}>
-                  <span className="text-muted text-capitalize">{k}</span>
-                  <span className="font-mono">{v != null ? `${v} cm` : '—'}</span>
                 </div>
               ))}
             </div>
@@ -220,8 +206,8 @@ export default function ClientArea() {
             </div>
           )}
 
-          {active === 'sur-mesure' && (
-            <SurMesureForm onCreated={() => { setRefreshKey((k) => k + 1); setActive('suivi') }} />
+          {active === 'creation' && (
+            <SurMesureForm measurements={measurements} onCreated={() => { setRefreshKey((k) => k + 1); setActive('suivi') }} />
           )}
         </div>
       </div>
@@ -229,33 +215,69 @@ export default function ClientArea() {
   )
 }
 
-const wizardSteps = ['Modèle', 'Tissu', 'Mensurations', 'Récapitulatif']
+function Section({ id, open, onToggle, title, icon, summary, children }) {
+  return (
+    <div className="glass p-0 overflow-hidden">
+      <button
+        type="button"
+        className="btn w-100 d-flex align-items-center gap-3 p-3 border-0 text-start"
+        style={{ color: 'var(--iro-text)', background: 'transparent' }}
+        onClick={() => onToggle(id)}
+        aria-expanded={open}
+      >
+        <i className={`bi ${icon} fs-5`} style={{ color: 'var(--iro-orange)' }}></i>
+        <span className="flex-grow-1">
+          <span className="d-block font-display">{title}</span>
+          <span className="d-block text-muted small">{summary}</span>
+        </span>
+        <i className={`bi ${open ? 'bi-chevron-up' : 'bi-chevron-down'}`}></i>
+      </button>
+      {open && <div className="p-3 pt-0">{children}</div>}
+    </div>
+  )
+}
 
-function SurMesureForm({ onCreated }) {
-  const [step, setStep] = useState(0)
-  const [model, setModel] = useState(null)
+function SurMesureForm({ measurements: existingMeasurements = [], onCreated }) {
+  const [openSection, setOpenSection] = useState('style')
+  const [styleMode, setStyleMode] = useState('catalog')
+  const [selectedProductId, setSelectedProductId] = useState(null)
+  const [styleLabel, setStyleLabel] = useState('')
+  const [stylePhotoFiles, setStylePhotoFiles] = useState([])
   const [fabric, setFabric] = useState(null)
-  const [measurements, setMeasurements] = useState({})
+  const [selectedMeasurementId, setSelectedMeasurementId] = useState(existingMeasurements[0]?.id ?? 'new')
+  const [measurementValues, setMeasurementValues] = useState({})
+  const [instructions, setInstructions] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState(null)
 
   const { data: textiles } = useFetch(getTextiles, [])
+  const { data: products } = useFetch(getProducts, [])
+  const styleProducts = (products || []).filter((p) => p.type === 'vetement' && p.publie !== false)
 
-  const next = () => setStep((s) => Math.min(s + 1, wizardSteps.length - 1))
-  const prev = () => setStep((s) => Math.max(s - 1, 0))
+  const toggleSection = (id) => setOpenSection((cur) => (cur === id ? null : id))
 
-  const selectedModel = modelOptions.find((m) => m.id === model)
+  const selectedProduct = styleProducts.find((p) => p.id === selectedProductId)
   const selectedFabric = (textiles || []).find((t) => t.id === fabric)
+  const styleName = styleMode === 'catalog' ? selectedProduct?.nom : styleLabel
+  const hasStyle = styleMode === 'catalog' ? !!selectedProduct : (!!styleLabel.trim() || stylePhotoFiles.length > 0)
+
+  const selectedMeasurement = existingMeasurements.find((m) => m.id === selectedMeasurementId)
 
   const handleSubmit = async () => {
     setSubmitting(true)
     setError(null)
     try {
-      await createSurMesureOrder({
-        modele: selectedModel?.nom || 'Pièce sur-mesure',
+      const order = await createSurMesureOrder({
+        modele: styleName || 'Pièce sur-mesure',
         textile_id: selectedFabric?.dbId ?? null,
-        ...measurements,
+        instructions: instructions || null,
+        ...(selectedMeasurementId !== 'new' ? { measurement_id: selectedMeasurementId } : measurementValues),
       })
+
+      for (const file of stylePhotoFiles) {
+        await uploadMyOrderPhoto(order.id, file)
+      }
+
       onCreated()
     } catch (err) {
       setError(err.message)
@@ -265,64 +287,137 @@ function SurMesureForm({ onCreated }) {
   }
 
   return (
-    <div>
-      <StepProgress steps={wizardSteps} active={step} />
+    <div className="d-flex flex-column gap-3">
+      <Section
+        id="style" open={openSection === 'style'} onToggle={toggleSection}
+        title="Style" icon="bi-palette"
+        summary={styleMode === 'catalog' ? (selectedProduct?.nom || 'Choisir un style dans le catalogue') : (styleLabel || (stylePhotoFiles.length ? `${stylePhotoFiles.length} photo(s) ajoutée(s)` : 'Ajouter une photo de style'))}
+      >
+        <div className="d-flex gap-2 mb-3">
+          <button type="button" className={`btn btn-sm ${styleMode === 'catalog' ? 'btn-iro' : 'btn-ghost'}`} onClick={() => setStyleMode('catalog')}>
+            <i className="bi bi-grid me-1"></i>Choisir dans le catalogue
+          </button>
+          <button type="button" className={`btn btn-sm ${styleMode === 'photo' ? 'btn-iro' : 'btn-ghost'}`} onClick={() => setStyleMode('photo')}>
+            <i className="bi bi-camera me-1"></i>Ajouter une photo
+          </button>
+        </div>
 
-      <div className="glass p-4" style={{ minHeight: 320 }}>
-        {step === 0 && (
+        {styleMode === 'catalog' ? (
           <div className="row row-cols-2 row-cols-md-3 g-3">
-            {modelOptions.map((m) => (
-              <div className="col" key={m.id}>
-                <button
-                  type="button"
-                  className="btn w-100 h-100 text-start p-3"
-                  style={{
-                    background: 'rgba(255,255,255,.04)', borderRadius: 16,
-                    border: `2px solid ${model === m.id ? 'var(--iro-magenta)' : 'var(--iro-border)'}`,
-                    color: 'var(--iro-text)',
-                  }}
-                  onClick={() => setModel(m.id)}
-                  aria-pressed={model === m.id}
-                >
-                  <i className={`bi ${m.icon} fs-3 d-block mb-2`} style={{ color: 'var(--iro-orange)' }}></i>
-                  {m.nom}
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {step === 1 && (
-          <div className="row row-cols-2 row-cols-md-3 g-3">
-            {(textiles || []).map((t) => (
-              <div className="col" key={t.id}>
+            {styleProducts.map((p) => (
+              <div className="col" key={p.id}>
                 <button
                   type="button"
                   className="btn w-100 h-100 p-0 overflow-hidden text-start"
-                  style={{ borderRadius: 16, border: `2px solid ${fabric === t.id ? 'var(--iro-magenta)' : 'var(--iro-border)'}` }}
-                  onClick={() => setFabric(t.id)}
-                  aria-pressed={fabric === t.id}
+                  style={{ borderRadius: 16, border: `2px solid ${selectedProductId === p.id ? 'var(--iro-magenta)' : 'var(--iro-border)'}` }}
+                  onClick={() => setSelectedProductId(p.id)}
+                  aria-pressed={selectedProductId === p.id}
                 >
-                  <TextileTile variant={t.tile.replace('tile-', '')} className="ratio ratio-16x9 rounded-0"></TextileTile>
+                  {p.image ? (
+                    <div className="ratio ratio-1x1">
+                      <img src={p.image} alt={p.nom} style={{ objectFit: 'cover', width: '100%', height: '100%' }} />
+                    </div>
+                  ) : (
+                    <TextileTile variant={p.tissu} className="ratio ratio-1x1 rounded-0"></TextileTile>
+                  )}
                   <div className="p-2">
-                    <div className="fw-semibold small">{t.nom}</div>
-                    <div className="font-mono text-muted" style={{ fontSize: '.7rem' }}>{t.origine}</div>
+                    <div className="fw-semibold small">{p.nom}</div>
+                    <div className="font-mono text-muted" style={{ fontSize: '.7rem' }}>{p.categorie || '—'}</div>
                   </div>
                 </button>
               </div>
             ))}
+            {styleProducts.length === 0 && <p className="text-muted small mb-0">Aucun modèle publié dans le catalogue pour le moment.</p>}
+          </div>
+        ) : (
+          <div>
+            <input
+              type="text" className="form-control mb-2" placeholder="Nom du style (ex. Robe portefeuille)"
+              value={styleLabel} onChange={(e) => setStyleLabel(e.target.value)}
+            />
+            <input
+              type="file" accept="image/*" multiple className="form-control mb-2"
+              onChange={(e) => setStylePhotoFiles(Array.from(e.target.files || []))}
+            />
+            {stylePhotoFiles.length > 0 && (
+              <div className="d-flex flex-wrap gap-2">
+                {stylePhotoFiles.map((file, i) => (
+                  <img key={i} src={URL.createObjectURL(file)} alt="" style={{ width: 64, height: 64, objectFit: 'cover', borderRadius: 8 }} />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </Section>
+
+      <Section
+        id="tissu" open={openSection === 'tissu'} onToggle={toggleSection}
+        title="Tissu" icon="bi-layers"
+        summary={selectedFabric?.nom || 'Aucun tissu choisi (facultatif)'}
+      >
+        <div className="row row-cols-2 row-cols-md-3 g-3">
+          {(textiles || []).map((t) => (
+            <div className="col" key={t.id}>
+              <button
+                type="button"
+                className="btn w-100 h-100 p-0 overflow-hidden text-start"
+                style={{ borderRadius: 16, border: `2px solid ${fabric === t.id ? 'var(--iro-magenta)' : 'var(--iro-border)'}` }}
+                onClick={() => setFabric(t.id)}
+                aria-pressed={fabric === t.id}
+              >
+                <TextileTile variant={t.tile.replace('tile-', '')} className="ratio ratio-16x9 rounded-0"></TextileTile>
+                <div className="p-2">
+                  <div className="fw-semibold small">{t.nom}</div>
+                  <div className="font-mono text-muted" style={{ fontSize: '.7rem' }}>{t.origine}</div>
+                </div>
+              </button>
+            </div>
+          ))}
+        </div>
+      </Section>
+
+      <Section
+        id="mesures" open={openSection === 'mesures'} onToggle={toggleSection}
+        title="Carnet de mesures" icon="bi-rulers"
+        summary={selectedMeasurementId === 'new' ? 'Nouvelle prise de mesures' : `Réutiliser « ${selectedMeasurement?.type_vetement} » (${selectedMeasurement?.prise_le?.slice(0, 10)})`}
+      >
+        {existingMeasurements.length > 0 && (
+          <div className="mb-3 d-flex flex-column gap-2">
+            {existingMeasurements.map((m) => (
+              <label
+                key={m.id}
+                className="d-flex align-items-center gap-2 p-2 rounded-3"
+                style={{ border: `2px solid ${selectedMeasurementId === m.id ? 'var(--iro-magenta)' : 'var(--iro-border)'}`, cursor: 'pointer' }}
+              >
+                <input
+                  type="radio" name="measurement-choice" checked={selectedMeasurementId === m.id}
+                  onChange={() => setSelectedMeasurementId(m.id)}
+                />
+                <span className="small flex-grow-1">
+                  Réutiliser <strong>{m.type_vetement}</strong>
+                  <span className="text-muted"> — pris le {m.prise_le?.slice(0, 10)}</span>
+                </span>
+              </label>
+            ))}
+            <label
+              className="d-flex align-items-center gap-2 p-2 rounded-3"
+              style={{ border: `2px solid ${selectedMeasurementId === 'new' ? 'var(--iro-magenta)' : 'var(--iro-border)'}`, cursor: 'pointer' }}
+            >
+              <input type="radio" name="measurement-choice" checked={selectedMeasurementId === 'new'} onChange={() => setSelectedMeasurementId('new')} />
+              <span className="small">Nouvelle prise de mesures</span>
+            </label>
           </div>
         )}
 
-        {step === 2 && (
+        {selectedMeasurementId === 'new' && (
           <div className="row row-cols-2 row-cols-md-3 g-3">
             {measurementFields.map((f) => (
               <div className="col" key={f.id}>
                 <div className="form-floating">
                   <input
                     type="number" className="form-control" id={f.id} placeholder={f.label}
-                    value={measurements[f.id] || ''}
-                    onChange={(e) => setMeasurements((m) => ({ ...m, [f.id]: e.target.value }))}
+                    value={measurementValues[f.id] || ''}
+                    onChange={(e) => setMeasurementValues((m) => ({ ...m, [f.id]: e.target.value }))}
                   />
                   <label htmlFor={f.id}>{f.label}</label>
                 </div>
@@ -330,42 +425,30 @@ function SurMesureForm({ onCreated }) {
             ))}
           </div>
         )}
+      </Section>
 
-        {step === 3 && (
-          <div>
-            <div className="row row-cols-1 row-cols-md-2 g-3 mb-4">
-              <div className="col">
-                <div className="glass p-3 h-100">
-                  <div className="eyebrow">Modèle</div>
-                  <div className="font-display fs-5">{selectedModel?.nom || '—'}</div>
-                </div>
-              </div>
-              <div className="col">
-                <div className="glass p-3 h-100">
-                  <div className="eyebrow">Tissu</div>
-                  <div className="font-display fs-5">{selectedFabric?.nom || '—'}</div>
-                </div>
-              </div>
-            </div>
-            {error && (
-              <div className="status danger p-3 mb-3">
-                <i className="bi bi-exclamation-circle me-2"></i>{error}
-              </div>
-            )}
-            <button type="button" className="btn-iro btn btn-lg" onClick={handleSubmit} disabled={submitting || !selectedModel}>
-              {submitting ? 'Envoi…' : 'Envoyer ma demande'}
-            </button>
+      <Section
+        id="instructions" open={openSection === 'instructions'} onToggle={toggleSection}
+        title="Instructions" icon="bi-chat-left-text"
+        summary={instructions ? `${instructions.slice(0, 60)}${instructions.length > 60 ? '…' : ''}` : 'Aucune instruction particulière (facultatif)'}
+      >
+        <textarea
+          className="form-control" rows={4}
+          placeholder="Détails de finition, occasion, contraintes de délai…"
+          value={instructions} onChange={(e) => setInstructions(e.target.value)}
+        />
+      </Section>
+
+      <div className="glass p-4">
+        {error && (
+          <div className="status danger p-3 mb-3">
+            <i className="bi bi-exclamation-circle me-2"></i>{error}
           </div>
         )}
-      </div>
-
-      <div className="d-flex justify-content-between mt-4">
-        <button type="button" className="btn-ghost btn" onClick={prev} style={{ visibility: step === 0 ? 'hidden' : 'visible' }}>
-          <i className="bi bi-arrow-left me-2"></i>Précédent
+        <button type="button" className="btn-iro btn btn-lg" onClick={handleSubmit} disabled={submitting || !hasStyle}>
+          {submitting ? 'Envoi…' : 'Envoyer ma demande'}
         </button>
-        <button type="button" className="btn-iro btn" onClick={next} style={{ visibility: step === wizardSteps.length - 1 ? 'hidden' : 'visible' }}>
-          Suivant<i className="bi bi-arrow-right ms-2"></i>
-        </button>
+        {!hasStyle && <p className="text-muted small mt-2 mb-0">Choisissez un style (catalogue ou photo) pour envoyer votre demande.</p>}
       </div>
     </div>
   )

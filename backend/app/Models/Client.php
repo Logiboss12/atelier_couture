@@ -43,15 +43,8 @@ class Client extends Model
         return $this->hasMany(Notification::class);
     }
 
-    public function mensurations(): array
+    public function measurements(): HasMany
     {
-        return [
-            'poitrine' => $this->poitrine,
-            'taille' => $this->taille,
-            'hanches' => $this->hanches,
-            'epaule' => $this->epaule,
-            'manche' => $this->manche,
-            'longueur' => $this->longueur,
-        ];
+        return $this->hasMany(Measurement::class)->latest('prise_le');
     }
 }

@@ -1,27 +1,31 @@
 import { NavLink } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext.jsx'
 
 export const adminNavItems = [
   { to: '/admin', label: 'Tableau de bord', icon: 'bi-grid-1x2', end: true },
   { to: '/admin/clients', label: 'Clients', icon: 'bi-people' },
   { to: '/admin/commandes', label: 'Commandes', icon: 'bi-scissors', badge: 18 },
-  { to: '/admin/devis', label: 'Devis & Factures', icon: 'bi-receipt', badge: 5 },
-  { to: '/admin/catalogue', label: 'Catalogue', icon: 'bi-tag' },
-  { to: '/admin/stocks', label: 'Stocks', icon: 'bi-box-seam', badge: 3 },
-  { to: '/admin/promotions', label: 'Promos & Événements', icon: 'bi-megaphone' },
-  { to: '/admin/finances', label: 'Finances', icon: 'bi-cash-coin' },
+  { to: '/admin/devis', label: 'Devis & Factures', icon: 'bi-receipt', badge: 5, adminOnly: true },
+  { to: '/admin/catalogue', label: 'Catalogue', icon: 'bi-tag', adminOnly: true },
+  { to: '/admin/stocks', label: 'Stocks', icon: 'bi-box-seam', badge: 3, adminOnly: true },
+  { to: '/admin/promotions', label: 'Promos & Événements', icon: 'bi-megaphone', adminOnly: true },
+  { to: '/admin/finances', label: 'Finances', icon: 'bi-cash-coin', adminOnly: true },
   { to: '/admin/livraisons', label: 'Livraisons', icon: 'bi-truck' },
-  { to: '/admin/equipe', label: 'Équipe', icon: 'bi-person-badge' },
-  { to: '/admin/parametres', label: 'Paramètres', icon: 'bi-gear' },
+  { to: '/admin/equipe', label: 'Équipe', icon: 'bi-person-badge', adminOnly: true },
+  { to: '/admin/parametres', label: 'Paramètres', icon: 'bi-gear', adminOnly: true },
 ]
 
 function SidebarNav({ onNavigate }) {
+  const { user, isAdmin } = useAuth()
+  const items = adminNavItems.filter((item) => !item.adminOnly || isAdmin)
+
   return (
     <>
       <NavLink to="/admin" end className="d-flex align-items-center gap-2 mb-4 text-decoration-none">
         <span className="font-display fs-5">Maison <span className="text-gradient">Ìró</span></span>
       </NavLink>
       <nav className="d-flex flex-column gap-1 flex-grow-1 overflow-auto">
-        {adminNavItems.map((item) => (
+        {items.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}
@@ -43,8 +47,8 @@ function SidebarNav({ onNavigate }) {
       <div className="d-flex align-items-center gap-2 pt-3 mt-3 border-top">
         <div className="rounded-circle" style={{ width: 40, height: 40, background: 'var(--iro-grad)' }} aria-hidden="true"></div>
         <div>
-          <div className="fw-semibold small">Khady Sarr</div>
-          <div className="text-muted font-mono" style={{ fontSize: '.7rem' }}>Cheffe d'atelier</div>
+          <div className="fw-semibold small">{user?.name}</div>
+          <div className="text-muted font-mono" style={{ fontSize: '.7rem' }}>{isAdmin ? 'Administrateur' : 'Couturier / Employé'}</div>
         </div>
       </div>
     </>

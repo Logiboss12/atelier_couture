@@ -5,10 +5,37 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\CashMovement;
 use App\Models\Invoice;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 
 class InvoiceController extends Controller
 {
+    public function pdf(Invoice $invoice)
+    {
+        return $this->renderPdf($invoice);
+    }
+
+    public static function renderPdf(Invoice $invoice)
+    {
+        $invoice->load('client', 'lines', 'order');
+
+        $statusLabels = [
+            'en_attente' => 'En attente',
+            'payee' => 'Payée',
+            'partielle' => 'Partielle',
+            'impayee' => 'Impayée',
+        ];
+
+        $paymentLabels = [
+            'carte' => 'Carte bancaire',
+            'mobile_money' => 'Mobile Money',
+            'especes_livraison' => 'Espèces à la livraison',
+        ];
+
+        return Pdf::loadView('pdf.invoice', compact('invoice', 'statusLabels', 'paymentLabels'))
+            ->download("facture-{$invoice->numero}.pdf");
+    }
+
     public function index()
     {
         return Invoice::with('client', 'lines', 'order')->latest('date')->get();

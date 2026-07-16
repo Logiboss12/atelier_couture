@@ -2,7 +2,9 @@ import { useState } from 'react'
 import TextileTile from '../../components/TextileTile.jsx'
 import { orderStatuses } from '../../mock/orders.js'
 import { useFetch } from '../../api/useFetch.js'
-import { getOrders, updateOrderStatus } from '../../api/orders.js'
+import {
+  getOrders, updateOrderStatus, updateOrderInstructions, uploadOrderPhoto, removeOrderPhoto,
+} from '../../api/orders.js'
 import { createQuote } from '../../api/quotes.js'
 
 function urgencyColor(dateStr) {
@@ -14,8 +16,95 @@ function urgencyColor(dateStr) {
 
 const money = (n) => `${Number(n || 0).toLocaleString('fr-FR')} F`
 
-function OrderCard({ order, onDragStart }) {
+function OrderDetails({ order, onChanged }) {
+  const [instructions, setInstructions] = useState(order.instructions)
+  const [savingInstructions, setSavingInstructions] = useState(false)
+  const [uploading, setUploading] = useState(false)
+
+  const handleSaveInstructions = async () => {
+    setSavingInstructions(true)
+    try {
+      await updateOrderInstructions(order.id, instructions)
+      onChanged()
+    } finally {
+      setSavingInstructions(false)
+    }
+  }
+
+  const handleUpload = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploading(true)
+    try {
+      await uploadOrderPhoto(order.id, file)
+      onChanged()
+    } finally {
+      setUploading(false)
+      e.target.value = ''
+    }
+  }
+
+  const handleRemovePhoto = async (path) => {
+    await removeOrderPhoto(order.id, path)
+    onChanged()
+  }
+
+  return (
+    <div className="mt-2 pt-2 border-top" style={{ borderColor: 'var(--iro-border)' }} onDragStart={(e) => e.stopPropagation()} draggable={false}>
+      {order.measurement && (
+        <>
+          <label className="font-mono small d-block mb-1 text-muted">Mesures utilisées</label>
+          <div className="mb-2 p-2 rounded-3" style={{ background: 'rgba(255,255,255,.04)' }}>
+            <div className="d-flex justify-content-between mb-1">
+              <span className="small fw-semibold">{order.measurement.typeVetement}</span>
+              <span className="font-mono text-muted" style={{ fontSize: '.68rem' }}>{order.measurement.priseLe}</span>
+            </div>
+            <div className="d-flex flex-wrap gap-2">
+              {Object.entries(order.measurement.valeurs).map(([k, v]) => (
+                <span key={k} className="font-mono text-muted" style={{ fontSize: '.68rem' }}>{k} {v}cm</span>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
+
+      <label className="font-mono small d-block mb-1 text-muted">Instructions</label>
+      <textarea
+        className="form-control form-control-sm mb-2" rows={2}
+        value={instructions} onChange={(e) => setInstructions(e.target.value)}
+        placeholder="Notes de coupe, finitions, remarques du client…"
+      />
+      <button type="button" className="btn-ghost btn btn-sm w-100 mb-2" onClick={handleSaveInstructions} disabled={savingInstructions}>
+        {savingInstructions ? '…' : 'Enregistrer les instructions'}
+      </button>
+
+      <label className="font-mono small d-block mb-1 text-muted">Photos</label>
+      {order.photos.length > 0 && (
+        <div className="d-flex flex-wrap gap-1 mb-2">
+          {order.photos.map((p) => (
+            <div key={p.path} className="position-relative">
+              <img src={p.url} alt="" style={{ width: 48, height: 48, objectFit: 'cover', borderRadius: 6 }} />
+              <button
+                type="button"
+                className="btn btn-sm position-absolute top-0 end-0 p-0 d-flex align-items-center justify-content-center"
+                style={{ width: 16, height: 16, background: 'var(--iro-red)', color: '#fff', borderRadius: '50%', lineHeight: 1, fontSize: '.6rem' }}
+                onClick={() => handleRemovePhoto(p.path)}
+                title="Supprimer"
+              >
+                <i className="bi bi-x"></i>
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+      <input type="file" accept="image/*" className="form-control form-control-sm" onChange={handleUpload} disabled={uploading} />
+    </div>
+  )
+}
+
+function OrderCard({ order, onDragStart, onChanged }) {
   const [showQuoteForm, setShowQuoteForm] = useState(false)
+  const [showDetails, setShowDetails] = useState(false)
   const [montantMatieres, setMontantMatieres] = useState('')
   const [montantMainOeuvre, setMontantMainOeuvre] = useState('')
   const [echeanceDevis, setEcheanceDevis] = useState('')
@@ -66,6 +155,13 @@ function OrderCard({ order, onDragStart }) {
         </span>
         <span className="font-mono text-muted" style={{ fontSize: '.7rem' }}>{order.assigne}</span>
       </div>
+
+      <button type="button" className="btn-ghost btn btn-sm w-100 mb-2" onClick={() => setShowDetails((v) => !v)}>
+        <i className={`bi ${showDetails ? 'bi-chevron-up' : 'bi-chevron-down'} me-1`}></i>
+        {showDetails ? 'Masquer' : 'Détails'}
+        {order.photos.length > 0 && !showDetails && <span className="ms-1"><i className="bi bi-image"></i> {order.photos.length}</span>}
+      </button>
+      {showDetails && <OrderDetails order={order} onChanged={onChanged} />}
 
       {showQuoteForm ? (
         <div className="d-flex flex-column gap-2">
@@ -159,7 +255,9 @@ export default function Orders() {
                 <span className="badge rounded-pill ms-auto" style={{ background: 'rgba(255,255,255,.08)' }}>{items.length}</span>
               </div>
               <div className="d-flex flex-column gap-2 overflow-auto">
-                {items.map((o) => <OrderCard key={o.id} order={o} onDragStart={handleDragStart} />)}
+                {items.map((o) => (
+                  <OrderCard key={o.id} order={o} onDragStart={handleDragStart} onChanged={() => setRefreshKey((k) => k + 1)} />
+                ))}
                 {items.length === 0 && <p className="text-muted small mb-0">Aucune commande.</p>}
               </div>
             </div>

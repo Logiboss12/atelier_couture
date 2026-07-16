@@ -4,12 +4,16 @@ import TextileTile from '../../components/TextileTile.jsx'
 import { useFetch } from '../../api/useFetch.js'
 import { getClients } from '../../api/clients.js'
 import { getOrders } from '../../api/orders.js'
+import { createMeasurement, deleteMeasurement } from '../../api/measurements.js'
+import { measurementFields } from '../../mock/customOrder.js'
 
 export default function Clients() {
   const [search, setSearch] = useState('')
   const [selectedId, setSelectedId] = useState(null)
+  const [refreshKey, setRefreshKey] = useState(0)
+  const [showMeasurementForm, setShowMeasurementForm] = useState(false)
 
-  const { data: clients, loading: loadingClients } = useFetch(getClients, [])
+  const { data: clients, loading: loadingClients } = useFetch(getClients, [refreshKey])
   const { data: orders } = useFetch(getOrders, [])
 
   if (loadingClients || !clients) return <p className="text-muted">Chargement…</p>
@@ -34,7 +38,7 @@ export default function Clients() {
                 type="button"
                 className="btn d-flex align-items-center gap-2 rounded-3 p-2 text-start border-0"
                 style={{ background: selectedId === c.id ? 'rgba(255,77,141,.14)' : 'transparent', color: 'var(--iro-text)' }}
-                onClick={() => setSelectedId(c.id)}
+                onClick={() => { setSelectedId(c.id); setShowMeasurementForm(false) }}
               >
                 <span className="rounded-circle flex-shrink-0" style={{ width: 40, height: 40, background: 'var(--iro-grad)' }}></span>
                 <span className="flex-grow-1">
@@ -76,11 +80,44 @@ export default function Clients() {
             </div>
             <div className="col">
               <div className="glass p-3 h-100">
-                <div className="eyebrow mb-2">Carnet de mesures</div>
-                {Object.entries(selected.mensurations).map(([k, v]) => (
-                  <div key={k} className="d-flex justify-content-between border-bottom py-2" style={{ borderColor: 'var(--iro-border)' }}>
-                    <span className="text-muted text-capitalize">{k}</span>
-                    <span className="font-mono">{v != null ? `${v} cm` : '—'}</span>
+                <div className="d-flex align-items-center justify-content-between mb-2">
+                  <div className="eyebrow mb-0">Carnet de mesures</div>
+                  <button type="button" className="btn-ghost btn btn-sm" onClick={() => setShowMeasurementForm((v) => !v)}>
+                    <i className="bi bi-plus-lg"></i>
+                  </button>
+                </div>
+
+                {showMeasurementForm && (
+                  <MeasurementForm
+                    clientId={selected.id}
+                    onSaved={() => { setShowMeasurementForm(false); setRefreshKey((k) => k + 1) }}
+                    onCancel={() => setShowMeasurementForm(false)}
+                  />
+                )}
+
+                {selected.measurements.length === 0 && !showMeasurementForm && (
+                  <p className="text-muted small mb-0">Aucune mesure enregistrée pour ce client.</p>
+                )}
+
+                {selected.measurements.map((m) => (
+                  <div key={m.id} className="border-bottom py-2" style={{ borderColor: 'var(--iro-border)' }}>
+                    <div className="d-flex align-items-center justify-content-between mb-1">
+                      <span className="small fw-semibold">{m.typeVetement}</span>
+                      <div className="d-flex align-items-center gap-2">
+                        <span className="font-mono text-muted" style={{ fontSize: '.68rem' }}>{m.priseLe}</span>
+                        <button
+                          type="button" className="btn-ghost btn btn-sm p-0" style={{ width: 22, height: 22, lineHeight: 1 }}
+                          onClick={async () => { if (confirm('Supprimer cette prise de mesures ?')) { await deleteMeasurement(m.id); setRefreshKey((k) => k + 1) } }}
+                        >
+                          <i className="bi bi-x" style={{ fontSize: '.85rem' }}></i>
+                        </button>
+                      </div>
+                    </div>
+                    <div className="d-flex flex-wrap gap-2">
+                      {Object.entries(m.valeurs).map(([k, v]) => (
+                        <span key={k} className="font-mono text-muted" style={{ fontSize: '.7rem' }}>{k} {v}cm</span>
+                      ))}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -102,5 +139,51 @@ export default function Clients() {
         </div>
       </div>
     </div>
+  )
+}
+
+function MeasurementForm({ clientId, onSaved, onCancel }) {
+  const [typeVetement, setTypeVetement] = useState('')
+  const [valeurs, setValeurs] = useState({})
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState(null)
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setSaving(true)
+    setError(null)
+    try {
+      const nonEmpty = Object.fromEntries(Object.entries(valeurs).filter(([, v]) => v !== '' && v != null))
+      await createMeasurement({ client_id: clientId, type_vetement: typeVetement, valeurs: nonEmpty })
+      onSaved()
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <form className="mb-3" onSubmit={handleSubmit}>
+      <input
+        type="text" className="form-control form-control-sm mb-2" placeholder="Type de vêtement (ex. Tailleur, Robe de soirée)"
+        value={typeVetement} onChange={(e) => setTypeVetement(e.target.value)} required
+      />
+      <div className="row row-cols-2 g-2 mb-2">
+        {measurementFields.map((f) => (
+          <div className="col" key={f.id}>
+            <input
+              type="number" className="form-control form-control-sm" placeholder={f.label}
+              value={valeurs[f.id] ?? ''} onChange={(e) => setValeurs((v) => ({ ...v, [f.id]: e.target.value }))}
+            />
+          </div>
+        ))}
+      </div>
+      {error && <div className="status danger p-2 mb-2 small">{error}</div>}
+      <div className="d-flex gap-2">
+        <button type="button" className="btn-ghost btn btn-sm" onClick={onCancel}>Annuler</button>
+        <button type="submit" className="btn-iro btn btn-sm" disabled={saving}>{saving ? '…' : 'Enregistrer'}</button>
+      </div>
+    </form>
   )
 }

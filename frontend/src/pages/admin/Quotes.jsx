@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useFetch } from '../../api/useFetch.js'
 import { getQuotes, getInvoicePreview } from '../../api/quotes.js'
-import { getPendingInvoices, confirmInvoice } from '../../api/invoices.js'
+import { getPendingInvoices, confirmInvoice, downloadInvoicePdf } from '../../api/invoices.js'
 
 const paymentLabels = {
   carte: 'Carte bancaire',
@@ -48,6 +48,14 @@ export default function Quotes() {
                 </div>
               </div>
               <div className="font-display">{inv.total.toLocaleString('fr-FR')} F</div>
+              <button
+                type="button"
+                className="btn-ghost btn btn-sm"
+                onClick={() => downloadInvoicePdf(inv.id, `facture-${inv.numero}.pdf`)}
+                title="Télécharger la facture (PDF)"
+              >
+                <i className="bi bi-download"></i>
+              </button>
               <button
                 type="button"
                 className="btn btn-sm"

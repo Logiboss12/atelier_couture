@@ -4,7 +4,6 @@ import KpiCard from '../../components/KpiCard.jsx'
 import StatusBadge from '../../components/StatusBadge.jsx'
 import TextileTile from '../../components/TextileTile.jsx'
 import { orderStatuses } from '../../mock/orders.js'
-import { dueSoon } from '../../mock/alerts.js'
 import { useFetch } from '../../api/useFetch.js'
 import { getOrders } from '../../api/orders.js'
 import { getFinanceSummary } from '../../api/finances.js'
@@ -27,11 +26,13 @@ export default function Dashboard() {
 
   const now = new Date()
   const commandesDuJour = (orders || []).filter((o) => o.echeance === now.toISOString().slice(0, 10)).length
-  const echeances48h = (orders || []).filter((o) => {
-    if (!o.echeance || o.statut === 'livree') return false
-    const hours = (new Date(o.echeance) - now) / 3600000
-    return hours >= 0 && hours <= 48
-  }).length
+  const dueSoonOrders = (orders || [])
+    .filter((o) => o.echeance && o.statut !== 'livree')
+    .map((o) => ({ ...o, heures: Math.round((new Date(o.echeance) - now) / 3600000) }))
+    .filter((o) => o.heures >= 0 && o.heures <= 48)
+    .sort((a, b) => a.heures - b.heures)
+
+  const echeances48h = dueSoonOrders.length
 
   const rentabilite = summary?.entrees_mois > 0
     ? Math.round((summary.benefice_net / summary.entrees_mois) * 100)
@@ -131,7 +132,10 @@ export default function Dashboard() {
         <div className="col-12 col-lg-6">
           <div className="glass p-3 h-100">
             <div className="eyebrow mb-3">Échéances 24/48h</div>
-            {dueSoon.map((d) => (
+            {dueSoonOrders.length === 0 && (
+              <p className="text-muted small mb-0">Aucune échéance dans les 48 prochaines heures.</p>
+            )}
+            {dueSoonOrders.map((d) => (
               <div key={d.id} className="d-flex align-items-center gap-3 border-bottom py-2" style={{ borderColor: 'var(--iro-border)' }}>
                 <span className="font-mono fw-bold" style={{ color: d.heures <= 12 ? 'var(--iro-red)' : d.heures <= 24 ? 'var(--iro-orange)' : 'var(--iro-blue)', minWidth: 46 }}>
                   {d.heures}h
@@ -140,7 +144,7 @@ export default function Dashboard() {
                   <div className="small fw-semibold">{d.client}</div>
                   <div className="text-muted" style={{ fontSize: '.75rem' }}>{d.modele}</div>
                 </div>
-                <span className="font-mono text-muted small">{d.assigne}</span>
+                <span className="font-mono text-muted small">{d.assigne || '—'}</span>
               </div>
             ))}
           </div>

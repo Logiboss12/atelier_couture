@@ -4,6 +4,7 @@ import { AuthProvider } from './context/AuthContext.jsx'
 import PublicLayout from './components/PublicLayout.jsx'
 import AdminLayout from './components/AdminLayout.jsx'
 import RequireAuth from './components/RequireAuth.jsx'
+import RequireAdmin from './components/RequireAdmin.jsx'
 
 import Home from './pages/public/Home.jsx'
 import Gallery from './pages/public/Gallery.jsx'
@@ -59,15 +60,18 @@ export default function App() {
               <Route index element={<Dashboard />} />
               <Route path="clients" element={<Clients />} />
               <Route path="commandes" element={<Orders />} />
-              <Route path="devis" element={<Quotes />} />
-              <Route path="catalogue" element={<Catalog />} />
-              <Route path="stocks" element={<Stock />} />
-              <Route path="stocks/entree" element={<StockEntry />} />
-              <Route path="promotions" element={<Promotions />} />
-              <Route path="finances" element={<Finances />} />
               <Route path="livraisons" element={<Deliveries />} />
-              <Route path="equipe" element={<Team />} />
-              <Route path="parametres" element={<Settings />} />
+
+              <Route element={<RequireAdmin />}>
+                <Route path="devis" element={<Quotes />} />
+                <Route path="catalogue" element={<Catalog />} />
+                <Route path="stocks" element={<Stock />} />
+                <Route path="stocks/entree" element={<StockEntry />} />
+                <Route path="promotions" element={<Promotions />} />
+                <Route path="finances" element={<Finances />} />
+                <Route path="equipe" element={<Team />} />
+                <Route path="parametres" element={<Settings />} />
+              </Route>
             </Route>
           </Routes>
         </BrowserRouter>

@@ -58,3 +58,26 @@ export function apiRemove(resource, id) {
 export function apiUpload(path, formData) {
   return request(path, { method: 'POST', body: formData })
 }
+
+export async function apiDownload(path, filename) {
+  const token = getToken()
+
+  const res = await fetch(`${BASE_URL}${path}`, {
+    headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+  })
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => null)
+    throw new Error(body?.message || `Requête API échouée (${res.status}) : ${path}`)
+  }
+
+  const blob = await res.blob()
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  URL.revokeObjectURL(url)
+}
